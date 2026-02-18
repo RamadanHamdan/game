@@ -92,19 +92,19 @@ export default function Home() {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center bg-gray-900 text-white relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-purple-900/20 pointer-events-none" />
+    <div className="w-full h-screen flex flex-col items-center justify-center bg-[#35a8ba] text-white relative overflow-hidden">
+      <div className="absolute inset-0 bg-gray-900 pointer-events-none" />
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         className="z-10 flex flex-col items-center gap-8 glass-panel p-16 border-t border-white/20 shadow-2xl"
       >
         <Crown size={80} className="text-yellow-400 filter drop-shadow-[0_0_20px_rgba(255,215,0,0.6)]" />
-        <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-400 to-blue-400 tracking-tighter" style={{ fontFamily: 'monospace' }}>
-          HDe Quiz
+        <h1 className="text-6xl font-black bg-clip-text text-white tracking-tighter" style={{ fontFamily: 'monospace' }}>
+          EduQuiz
         </h1>
         <p className="text-xl opacity-80 max-w-md text-center">
-          4 Players Games <br /> Answer fast to charge your battery!
+          4/10 Players Games <br /> Answer fast to charge your battery!
         </p>
 
         {/* Excel Upload Section */}
@@ -128,6 +128,20 @@ export default function Home() {
         >
           <Download size={18} />
           <span className="text-sm font-semibold">Download Template</span>
+        </button>
+
+        <button
+          onClick={() => {
+            if (confirm("Reset to default questions? This will clear any uploaded file.")) {
+              sessionStorage.removeItem('quizQuestions');
+              setUploadError(null);
+              alert("Questions reset to default.");
+              window.location.reload();
+            }
+          }}
+          className="flex items-center gap-2 cursor-pointer bg-red-600/20 hover:bg-red-600/40 text-red-300 px-4 py-2 rounded-lg border border-red-500/50 transition-colors"
+        >
+          <span className="text-sm font-semibold">Reset to Default</span>
         </button>
 
         <button

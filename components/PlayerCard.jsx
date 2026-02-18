@@ -3,13 +3,13 @@ import { motion } from 'framer-motion';
 import { User, Trophy, Check, X, Clock } from 'lucide-react';
 import Battery from './Battery';
 
-const PlayerCard = ({ player, options, hasAnswered, result, isWinner, onAnswer }) => {
-    // options: array of strings ["Option A", "Option B", ...]
+const PlayerCard = ({ player, question, hasAnswered, result, isWinner, onAnswer }) => {
+    // question: { question: "...", options: ["...", ...], ... }
     // onAnswer: (optionIndex) => void
 
     return (
         <motion.div
-            className={`glass-panel p-4 flex flex-col items-center gap-3 relative transition-all duration-300 w-full
+            className={`glass-panel p-1.5 md:p-2 flex flex-col items-center gap-0.5 relative transition-all duration-300 w-full h-full min-h-0
         ${hasAnswered ? 'border-blue-400 shadow-[0_0_15px_rgba(50,50,255,0.3)]' : 'border-white/10'}
         ${result === 'correct' ? '!border-green-500 !shadow-[0_0_30px_rgba(0,255,0,0.4)]' : ''}
         ${result === 'wrong' ? '!border-red-500 opacity-80' : ''}
@@ -17,68 +17,86 @@ const PlayerCard = ({ player, options, hasAnswered, result, isWinner, onAnswer }
       `}
         >
             {/* Inputs Header */}
-            <div className="flex justify-between w-full items-center">
+            <div className="flex justify-between w-full items-center shrink-0">
                 {/* Avatar */}
                 <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg border-2 relative"
+                    className="w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center text-sm md:text-xl shadow-lg border-2 relative shrink-0"
                     style={{
                         backgroundColor: player.color,
                         borderColor: 'rgba(255,255,255,0.2)'
                     }}
                 >
-                    {player.avatar || <User size={24} color="white" />}
-                    {/* Key Hint */}
-                    <div className="absolute -bottom-2 -right-2 bg-black/80 text-white text-[9px] px-1.5 py-0.5 rounded-full border border-white/20">
-                        {player.controls.split(',')[0]}...
-                    </div>
+                    {player.avatar || <User size={16} className="md:w-6 md:h-6" color="white" />}
+                    {/* Key Hint - hidden on mobile since it likely uses touch */}
                 </div>
 
-                <h3 className="text-lg font-bold tracking-wide truncate ml-2 flex-1">{player.name}</h3>
+                <h3 className="text-sm md:text-lg font-bold tracking-wide truncate ml-2 flex-1">{player.name}</h3>
 
                 {/* Status Icon */}
-                <div className="w-8 flex justify-end">
+                <div className="w-6 md:w-8 flex justify-end shrink-0">
                     {hasAnswered && result === null && (
-                        <div className="text-blue-400 animate-pulse"><Clock size={20} /></div>
+                        <div className="text-blue-400 animate-pulse"><Clock size={16} className="md:w-5 md:h-5" /></div>
                     )}
                     {result === 'correct' && (
-                        <div className="text-green-400"><Check size={24} strokeWidth={4} /></div>
+                        <div className="text-green-400"><Check size={20} className="md:w-6 md:h-6" strokeWidth={4} /></div>
                     )}
                     {result === 'wrong' && (
-                        <div className="text-red-400"><X size={24} strokeWidth={4} /></div>
+                        <div className="text-red-400"><X size={20} className="md:w-6 md:h-6" strokeWidth={4} /></div>
                     )}
                     {isWinner && (
-                        <div className="text-yellow-400 animate-bounce"><Trophy size={28} /></div>
+                        <div className="text-yellow-400 animate-bounce"><Trophy size={24} className="md:w-[28px] md:h-[28px]" /></div>
                     )}
                 </div>
             </div>
 
+            {/* Question Text */}
+            <div className="w-full text-center my-0.5 bg-black/20 p-1 rounded border border-white/5 flex-1 flex items-center justify-center min-h-[40px] md:min-h-[50px]">
+                <p className="text-[10px] md:text-xs font-medium leading-tight text-blue-100 line-clamp-3">
+                    {question?.question || "Waiting..."}
+                </p>
+            </div>
+
             {/* Answer Buttons Grid */}
-            <div className="grid grid-cols-2 gap-2 w-full mt-2">
-                {options.map((opt, idx) => {
-                    const isSelected = false; // We don't show specific selection until reveal to avoid cheating
-                    const isCorrect = result === 'correct'; // Simplified for now, complex highlighting logic is in parent
+            <div className="grid grid-cols-2 gap-1 w-full min-h-0 shrink-0 mb-1">
+                {question?.options?.map((opt, idx) => {
+                    const isSelected = false;
+
+                    const handleInput = (e) => {
+                        // Prevent default to stop scrolling/zooming/double-firing on touch
+                        // but only if it's a touch event to allow mouse clicks to work normally
+                        if (e.type === 'touchstart') {
+                            e.preventDefault();
+                        }
+                        if (!hasAnswered) {
+                            onAnswer(idx);
+                        }
+                    };
+
+                    const isCorrectAnswer = opt === question.answer;
+                    const showCorrect = result !== null && isCorrectAnswer;
 
                     return (
                         <button
                             key={idx}
-                            onClick={() => !hasAnswered && onAnswer(idx)}
+                            onMouseDown={handleInput}
+                            onTouchStart={handleInput}
                             disabled={hasAnswered || result !== null}
                             className={`
-                        text-xs font-bold py-2 px-1 rounded border transition-all text-left truncate
-                        ${hasAnswered ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white/10 cursor-pointer'}
-                        bg-black/20 border-white/10
+                        text-[10px] md:text-xs font-bold py-1.5 px-2 md:py-2 rounded border transition-all text-left relative whitespace-normal wrap-break-word leading-tight h-full min-h-[40px] flex items-center
+                        ${hasAnswered ? 'opacity-50 cursor-not-allowed' : 'active:bg-white/20 hover:bg-white/10 cursor-pointer'}
+                        ${showCorrect ? 'border-green-500! shadow-[0_0_10px_rgba(0,255,0,0.6)]! bg-green-500/20' : 'bg-black/20 border-white/10'}
                     `}
                             title={opt}
                         >
-                            <span className="opacity-50 mr-1">{['A', 'B', 'C', 'D'][idx]}.</span>
-                            {opt}
+                            <span className="opacity-50 mr-1.5 shrink-0">{['A', 'B', 'C', 'D'][idx]}.</span>
+                            <span className="">{opt}</span>
                         </button>
                     )
                 })}
             </div>
 
-            {/* Battery */}
-            <div className="mt-auto w-full flex justify-center pt-2">
+            {/* Battery (Horizontal) - Integrated at bottom */}
+            <div className="w-full mt-auto pt-1">
                 <Battery level={player.score} isCharging={result === 'correct'} />
             </div>
 

@@ -18,24 +18,21 @@ const Battery = ({ level, isCharging }) => {
     const color = getColor(level);
 
     return (
-        <div className="relative flex flex-col items-center">
-            {/* Battery Nipple */}
-            <div className="w-12 h-4 bg-gray-400 rounded-t-sm border-2 border-b-0 border-white/30 shadow-inner" style={{ background: 'linear-gradient(to right, #666, #aaa, #666)' }}></div>
-
-            {/* Battery Body */}
-            <div className="relative w-24 h-44 bg-gray-900 rounded-2xl border-4 border-gray-400 p-2 flex flex-col-reverse justify-start gap-1 shadow-[0_0_25px_rgba(0,0,0,0.8)] backdrop-blur-sm overflow-hidden">
+        <div className="relative flex items-center gap-1 w-full max-w-[120px] mx-auto">
+            {/* Battery Body (Horizontal) */}
+            <div className="relative flex-1 h-3 md:h-4 bg-gray-900 rounded md:rounded border border-gray-400 p-[1px] flex items-center justify-start gap-[1px] shadow-[0_0_5px_rgba(0,0,0,0.8)] backdrop-blur-sm overflow-hidden">
 
                 {/* Glossy overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-black/20 pointer-events-none z-20 rounded-lg"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/20 pointer-events-none z-20 rounded"></div>
 
                 {/* Segments */}
                 {[...Array(totalSegments)].map((_, i) => {
                     const isActive = i < activeSegments;
 
-                    // Charging animation: pulse opacity and glow if this is a filled segment and we are in charging state
+                    // Charging animation
                     const pulse = isCharging && isActive ? {
                         opacity: [1, 0.6, 1],
-                        boxShadow: [`0 0 10px ${color}`, `0 0 20px ${color}`, `0 0 10px ${color}`]
+                        boxShadow: [`0 0 5px ${color}`, `0 0 10px ${color}`, `0 0 5px ${color}`]
                     } : {};
 
                     return (
@@ -45,21 +42,22 @@ const Battery = ({ level, isCharging }) => {
                             animate={{
                                 opacity: isActive ? 1 : 0.2,
                                 backgroundColor: isActive ? color : '#333',
-                                boxShadow: isActive ? `0 0 10px ${color}` : 'none',
+                                boxShadow: isActive ? `0 0 5px ${color}` : 'none',
                                 ...pulse
                             }}
                             transition={{
                                 duration: 0.3,
                                 delay: isActive ? i * 0.05 : 0,
-                                // Pulse repeat
                                 opacity: { repeat: isCharging ? Infinity : 0, duration: 0.8 },
                                 boxShadow: { repeat: isCharging ? Infinity : 0, duration: 0.8 }
                             }}
-                            className="w-full flex-1 rounded-sm border-[0.5px] border-black/20"
+                            className="h-full flex-1 rounded-[1px] border-r-[0.5px] border-black/20 last:border-r-0"
                         />
                     );
                 })}
             </div>
+            {/* Battery Nipple (Right side) */}
+            <div className="w-1 h-2 md:w-1.5 md:h-2.5 bg-gray-400 rounded-r-sm border border-l-0 border-white/30 shadow-inner" style={{ background: 'linear-gradient(to bottom, #666, #aaa, #666)' }}></div>
         </div>
     );
 };

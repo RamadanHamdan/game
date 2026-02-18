@@ -1,20 +1,20 @@
 'use client';
 
+import soundManager from '../lib/SoundManager';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PlayerCard from './PlayerCard';
 import Timer from './Timer';
 import Registration from './Registration';
-import { Crown, RefreshCw, Trophy, Upload } from 'lucide-react';
+import { Crown, RefreshCw, Trophy, Upload, Volume2, VolumeX } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+
 const INITIAL_PLAYERS = [
-    { id: 1, name: "Player 1", score: 0, color: "#FF6B6B", avatar: "🦁", controls: "Q, W, E, R" },
-    { id: 2, name: "Player 2", score: 0, color: "#4ECDC4", avatar: "🦊", controls: "U, I, O, P" },
-    { id: 3, name: "Player 3", score: 0, color: "#FFE66D", avatar: "🐼", controls: "Z, X, C, V" },
-    { id: 4, name: "Player 4", score: 0, color: "#1A535C", avatar: "🐸", controls: "N, M, <, >" },
+    { id: 1, name: "Player 1", score: 0, color: "#FF6B6B", avatar: "🦁" },
+    { id: 2, name: "Player 2", score: 0, color: "#4ECDC4", avatar: "🦊" },
 ];
 
 // Mapping keys to option indices (0, 1, 2, 3)
@@ -29,7 +29,8 @@ const GameContainer = () => {
     const router = useRouter();
     const [questions, setQuestions] = useState([]);
     const [players, setPlayers] = useState(INITIAL_PLAYERS);
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const [currentRound, setCurrentRound] = useState(1);
+    const [playerQuestions, setPlayerQuestions] = useState({}); // { playerId: questionObj }
     const [gameState, setGameState] = useState('loading');
     const [playerAnswers, setPlayerAnswers] = useState({});
     const [roundResults, setRoundResults] = useState({});
@@ -37,6 +38,7 @@ const GameContainer = () => {
 
     // Track finish order: [{ playerId: 1, rank: 1, score: 100 }, ...]
     const [finishedPlayers, setFinishedPlayers] = useState([]);
+    const [isMuted, setIsMuted] = useState(false);
 
     // Load default questions initially
     // Load questions (check session storage first)
@@ -53,6 +55,11 @@ const GameContainer = () => {
         } else {
             loadDefaultQuestions();
         }
+
+        // Cleanup audio on unmount
+        return () => {
+            soundManager.stopBGM();
+        };
     }, []);
 
     const loadDefaultQuestions = () => {
@@ -70,12 +77,43 @@ const GameContainer = () => {
 
 
 
+    const startRound = (roundNum, currentPlayers) => {
+        if (!questions || questions.length === 0) return;
+
+        // Assign a unique random question to each player
+        const newPlayerQuestions = {};
+        const availableQuestions = [...questions];
+
+        currentPlayers.forEach(p => {
+            // Simple random selection. If run out, reuse.
+            if (availableQuestions.length === 0) {
+                availableQuestions.push(...questions);
+            }
+            const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+            const question = availableQuestions.splice(randomIndex, 1)[0];
+            newPlayerQuestions[p.id] = question;
+        });
+
+        setPlayerQuestions(newPlayerQuestions);
+        setCurrentRound(roundNum);
+        setPlayerAnswers({});
+        setRoundResults({});
+        setGameState('playing');
+    };
+
     const handleRegistrationComplete = (newPlayers) => {
+        soundManager.init(); // Initialize AudioContext on user gesture
+        soundManager.playClick();
+        soundManager.startProceduralBGM();
+
         const resetPlayers = newPlayers.map(p => ({ ...p, score: 0 }));
         setPlayers(resetPlayers);
         setGameState('playing');
         setGameHistory([]);
         setFinishedPlayers([]);
+
+        // Start Round 1
+        startRound(1, resetPlayers);
     };
 
     const getLeaderboard = () => {
@@ -100,6 +138,12 @@ const GameContainer = () => {
         });
 
         return leaderboard;
+    };
+
+    const toggleMute = () => {
+        const newMuteState = !isMuted;
+        setIsMuted(newMuteState);
+        soundManager.setMute(newMuteState);
     };
 
 
@@ -132,15 +176,19 @@ const GameContainer = () => {
         XLSX.writeFile(wb, `quiz_results_${timestamp}.xlsx`);
     };
 
-    const currentQuestion = questions[currentQuestionIndex];
+
 
     const submitAnswer = (playerId, optionIndex) => {
         if (gameState !== 'playing') return;
-        // Check if player has already answered OR is finished
         if (playerAnswers[playerId] !== undefined) return;
         if (finishedPlayers.some(fp => fp.playerId === playerId)) return;
 
-        const optionValue = currentQuestion.options[optionIndex];
+        const myQuestion = playerQuestions[playerId];
+        if (!myQuestion) return;
+
+        soundManager.playClick();
+
+        const optionValue = myQuestion.options[optionIndex];
         setPlayerAnswers(prev => ({
             ...prev,
             [playerId]: optionValue
@@ -158,7 +206,7 @@ const GameContainer = () => {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [gameState, playerAnswers, currentQuestion, finishedPlayers]);
+    }, [gameState, playerAnswers, finishedPlayers]);
 
     // Check if all ACTIVE players answered
     useEffect(() => {
@@ -184,25 +232,31 @@ const GameContainer = () => {
 
         const results = {};
         let currentFinished = [...finishedPlayers];
+        let anyCorrect = false;
 
         const newPlayers = players.map(p => {
-            // If player already finished, keep them as is
             if (currentFinished.some(fp => fp.playerId === p.id)) {
                 return p;
             }
 
+            const myQuestion = playerQuestions[p.id];
             const answer = playerAnswers[p.id];
-            const isCorrect = answer === currentQuestion.answer;
+
+            // Safety check
+            if (!myQuestion) return p;
+
+            const isCorrect = answer === myQuestion.answer;
+            if (isCorrect) anyCorrect = true;
 
             // Record history
             setGameHistory(prev => [...prev, {
-                round: currentQuestionIndex + 1,
-                question: currentQuestion.question,
+                round: currentRound,
+                question: myQuestion.question,
                 playerId: p.id,
                 playerName: p.name,
                 answer: answer || "No Answer",
                 isCorrect: !!isCorrect,
-                correctAnswer: currentQuestion.answer
+                correctAnswer: myQuestion.answer
             }]);
 
             results[p.id] = answer ? (isCorrect ? 'correct' : 'wrong') : 'wrong';
@@ -219,41 +273,91 @@ const GameContainer = () => {
             return p;
         });
 
+        // Play sound based on result
+        if (anyCorrect) {
+            soundManager.playCorrect();
+        } else {
+            soundManager.playWrong();
+        }
+
+        // Assign ranks to newly finished players
+        const activePlayersAfterRound = newPlayers.filter(p => !currentFinished.some(fp => fp.playerId === p.id));
+        const sortedActivePlayers = [...activePlayersAfterRound].sort((a, b) => b.score - a.score);
+
+        let nextRank = currentFinished.length + 1;
+        const updatedFinishedPlayers = currentFinished.map(fp => {
+            if (fp.rank === 0) { // If rank hasn't been assigned yet
+                // Find player's position relative to active players
+                const player = newPlayers.find(p => p.id === fp.playerId);
+                if (player) {
+                    const lowerScorePlayers = sortedActivePlayers.filter(p => p.score < player.score).length;
+                    return { ...fp, rank: nextRank + lowerScorePlayers };
+                }
+            }
+            return fp;
+        });
+
+        // Sort finished players by score (desc) then by rank (asc)
+        updatedFinishedPlayers.sort((a, b) => {
+            const playerA = newPlayers.find(p => p.id === a.playerId);
+            const playerB = newPlayers.find(p => p.id === b.playerId);
+            if (playerA.score !== playerB.score) {
+                return playerB.score - playerA.score;
+            }
+            return a.rank - b.rank;
+        });
+
+        // Re-assign ranks based on final sorted order
+        const finalFinishedPlayers = updatedFinishedPlayers.map((fp, index) => ({
+            ...fp,
+            rank: index + 1
+        }));
+
+
         setRoundResults(results);
         setPlayers(newPlayers);
-        setFinishedPlayers(currentFinished);
+        setFinishedPlayers(finalFinishedPlayers);
+        setPlayerAnswers({});
 
-        const isLastQuestion = currentQuestionIndex >= questions.length - 1;
-        const allFinished = currentFinished.length === players.length;
+        const anyFinished = newPlayers.some(p => finalFinishedPlayers.some(fp => fp.playerId === p.id));
+        // Max rounds safety
+        const isMaxRounds = currentRound >= 50;
 
         setTimeout(() => {
-            if (allFinished || isLastQuestion) {
+            if (anyFinished || isMaxRounds) {
                 setGameState('winner');
+                soundManager.playWin();
             } else {
-                nextRound();
+                startRound(currentRound + 1, newPlayers);
             }
         }, 4000);
     };
 
-    const nextRound = () => {
-        setPlayerAnswers({});
-        setRoundResults({});
-        setCurrentQuestionIndex(prev => prev + 1);
-        setGameState('playing');
-    };
+    // const nextRound = () => { ... } // Removed, using startRound
 
     const resetGame = () => {
-        // Go back to registration logic
         setPlayerAnswers({});
         setRoundResults({});
-        setCurrentQuestionIndex(0);
+        setPlayerQuestions({});
+        setCurrentRound(1);
         setGameHistory([]);
         setFinishedPlayers([]);
         setGameState('registration');
     };
 
     const fullReset = () => {
+        soundManager.stopBGM();
         router.push('/');
+    };
+
+    const getGridCols = (count) => {
+        if (count <= 2) return "grid-cols-1 md:grid-cols-2";
+        if (count === 3) return "grid-cols-1 md:grid-cols-3";
+        if (count === 4) return "grid-cols-2 md:grid-cols-4";
+        if (count <= 6) return "grid-cols-2 md:grid-cols-3";
+        if (count <= 8) return "grid-cols-2 md:grid-cols-4";
+        if (count <= 10) return "grid-cols-2 md:grid-cols-5";
+        return "grid-cols-3 md:grid-cols-6";
     };
 
     if (gameState === 'loading') return <div className="text-white text-center mt-20">Loading...</div>;
@@ -268,91 +372,95 @@ const GameContainer = () => {
         );
     }
 
+
+
     return (
-        <div className="w-full max-w-[1400px] mx-auto flex flex-col gap-4 p-4 h-screen max-h-screen overflow-hidden">
+        <div className="w-full max-w-[1400px] mx-auto flex flex-col gap-2 p-2 h-dvh max-h-dvh overflow-hidden sticky top-0">
 
             {/* Header */}
-            <header className="flex justify-between items-center glass-panel p-3 shrink-0">
+            <header className="flex justify-between items-center glass-panel px-2 py-1 shrink-0 h-[40px] md:h-[50px]">
                 <div className="flex items-center gap-2">
-                    <Crown className="text-yellow-400" fill="currentColor" />
-                    <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-400" style={{ fontFamily: 'monospace' }}>
-                        HDe Quiz
+                    <Crown className="text-yellow-400 w-5 h-5 md:w-6 md:h-6" fill="currentColor" />
+                    <h1 className="text-lg md:text-xl font-bold bg-clip-text text-transparent bg-linear-to-r text-white" style={{ fontFamily: 'monospace' }}>
+                        EduQuiz
                     </h1>
                 </div>
-                <div className="text-sm opacity-60">Round {currentQuestionIndex + 1}</div>
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={toggleMute}
+                        className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/80 hover:text-white"
+                        title={isMuted ? "Unmute Music" : "Mute Music"}
+                    >
+                        {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                    </button>
+                    <div className="text-xs md:text-sm opacity-60">Round {currentRound}</div>
+                </div>
             </header>
 
-            {/* Timer & Question - Central Area */}
-            <div className="shrink-0 flex flex-col items-center gap-4">
-                {/* Timer */}
-                <div className="w-full max-w-2xl">
+            {/* Timer & Banner */}
+            <div className="shrink-0 flex flex-col items-center gap-1 max-h-[12vh]">
+                <div className="w-full max-w-2xl transform scale-75 origin-top">
                     <Timer
-                        duration={currentQuestion.timeLimit || 10}
+                        duration={10}
                         onTimeUp={handleRoundEnd}
                         isRunning={gameState === 'playing'}
                     />
                 </div>
 
                 <AnimatePresence mode='wait'>
-                    {gameState !== 'winner' && (
+                    {gameState === 'playing' && (
                         <motion.div
-                            key={currentQuestion.id}
-                            initial={{ opacity: 0, y: -20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0 }}
-                            className="glass-panel px-8 py-4 text-center max-w-4xl"
+                            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+                            className="bg-white/10 px-3 py-0.0,1 rounded-full backdrop-blur-sm border border-white/10"
                         >
-                            <h2 className="text-2xl md:text-3xl font-bold leading-tight">
-                                {currentQuestion.question}
-                            </h2>
-                            {/* Reveal Answer Text */}
-                            {gameState === 'reveal' && (
-                                <motion.div
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                    className="mt-2 text-blue-400 font-bold"
-                                >
-                                    Correct Answer: {currentQuestion.answer}
-                                </motion.div>
-                            )}
+                            <h2 className="text-lg font-bold text-white/80">Answer your own question!</h2>
+                        </motion.div>
+                    )}
+                    {gameState === 'reveal' && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                            className="bg-blue-500/20 px-3 py-0.0,1 rounded-full backdrop-blur-sm border border-blue-500/30"
+                        >
+                            <h2 className="text-lg font-bold text-blue-200">Reviewing Answers...</h2>
                         </motion.div>
                     )}
                 </AnimatePresence>
             </div>
 
             {/* Players Grid */}
-            <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 items-start content-start overflow-y-auto">
+            <div className={`flex-1 grid gap-1 md:gap-2 items-start content-start min-h-0 overflow-y-auto ${getGridCols(players.length)}`}>
                 {gameState === 'winner' ? (
                     <motion.div
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        className="col-span-4 glass-panel p-8 flex flex-col items-center gap-6 text-center border-yellow-400 border-2 shadow-[0_0_100px_rgba(255,215,0,0.2)] max-h-[80vh] overflow-y-auto"
+                        className={`col-span-full glass-panel p-4 md:p-8 flex flex-col items-center gap-4 text-center border-yellow-400 border-2 shadow-[0_0_100px_rgba(255,215,0,0.2)] h-full overflow-y-auto`}
                     >
-                        <Trophy size={60} className="text-yellow-400 animate-bounce" />
-                        <h1 className="text-4xl font-bold text-yellow-300">LEADERBOARD</h1>
+                        <Trophy size={40} className="text-yellow-400 animate-bounce md:w-[60px] md:h-[60px]" />
+                        <h1 className="text-2xl md:text-4xl font-bold text-yellow-300">LEADERBOARD</h1>
 
-                        <div className="w-full max-w-2xl flex flex-col gap-3">
+                        <div className="w-full max-w-2xl flex flex-col gap-2 flex-1 overflow-y-auto min-h-0">
                             {getLeaderboard().map((p, idx) => (
-                                <div key={p.id} className="flex items-center gap-4 bg-white/10 p-4 rounded-xl border border-white/10">
-                                    <div className="text-3xl font-bold w-12 text-yellow-400">#{idx + 1}</div>
-                                    <div className="text-4xl">{p.avatar}</div>
-                                    <div className="flex-1 text-left">
-                                        <div className="font-bold text-xl">{p.name}</div>
-                                        <div className="text-sm opacity-60">{p.status === 'Finished' ? 'Finished!' : 'Completed'}</div>
+                                <div key={p.id} className="flex items-center gap-3 bg-white/10 p-2 md:p-4 rounded-xl border border-white/10 shrink-0">
+                                    <div className="text-xl md:text-3xl font-bold w-8 md:w-12 text-yellow-400">#{idx + 1}</div>
+                                    <div className="text-2xl md:text-4xl">{p.avatar}</div>
+                                    <div className="flex-1 text-left min-w-0">
+                                        <div className="font-bold text-base md:text-xl truncate">{p.name}</div>
+                                        <div className="text-xs md:text-sm opacity-60">{p.status === 'Finished' ? 'Finished!' : 'Completed'}</div>
                                     </div>
-                                    <div className="text-2xl font-mono text-green-400">{p.score} pts</div>
+                                    <div className="text-lg md:text-2xl font-mono text-green-400 whitespace-nowrap">{p.score} pts</div>
                                 </div>
                             ))}
                         </div>
 
-                        <div className="flex gap-4 mt-6">
-                            <button onClick={handleDownloadResults} className="btn flex items-center gap-2 bg-green-500/20 hover:bg-green-500/40 border-green-500">
-                                <Download size={20} /> Download Results (Excel)
+                        <div className="flex gap-2 mt-4 flex-wrap justify-center shrink-0">
+                            <button onClick={handleDownloadResults} className="btn flex items-center gap-2 bg-green-500/20 hover:bg-green-500/40 border-green-500 text-sm py-2">
+                                <Download size={16} /> <span className="hidden md:inline">Download Results</span>
                             </button>
-                            <button onClick={resetGame} className="btn flex items-center gap-2 bg-yellow-400/20 hover:bg-yellow-400/40 border-yellow-400">
-                                <RefreshCw size={20} /> Play Again
+                            <button onClick={resetGame} className="btn flex items-center gap-2 bg-yellow-400/20 hover:bg-yellow-400/40 border-yellow-400 text-sm py-2">
+                                <RefreshCw size={16} /> Play Again
                             </button>
-                            <button onClick={fullReset} className="btn flex items-center gap-2 bg-red-400/20 hover:bg-red-400/40 border-red-400">
-                                <RefreshCw size={20} /> Exit
+                            <button onClick={fullReset} className="btn flex items-center gap-2 bg-red-400/20 hover:bg-red-400/40 border-red-400 text-sm py-2">
+                                <RefreshCw size={16} /> Exit
                             </button>
                         </div>
                     </motion.div>
@@ -363,7 +471,7 @@ const GameContainer = () => {
                             <PlayerCard
                                 key={p.id}
                                 player={p}
-                                options={currentQuestion.options}
+                                question={playerQuestions[p.id]}
                                 hasAnswered={playerAnswers[p.id] !== undefined || isFinished}
                                 result={gameState === 'reveal' ? roundResults[p.id] : null}
                                 isWinner={p.score >= 100}

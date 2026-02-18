@@ -9,20 +9,22 @@ const Timer = ({ duration, onTimeUp, isRunning }) => {
 
         setTimeLeft(duration);
 
-        // Using simple interval for countdown display
         const timer = setInterval(() => {
             setTimeLeft((prev) => {
-                if (prev <= 0.1) {
-                    clearInterval(timer);
-                    onTimeUp();
-                    return 0;
-                }
-                return prev - 0.1;
+                if (prev <= 0) return 0;
+                return Math.max(0, prev - 0.1);
             });
         }, 100);
 
         return () => clearInterval(timer);
-    }, [duration, isRunning, onTimeUp]); // Re-run if duration changes or restarted
+    }, [duration, isRunning]);
+
+    // Trigger onTimeUp when timer hits 0
+    useEffect(() => {
+        if (timeLeft <= 0 && isRunning) {
+            onTimeUp();
+        }
+    }, [timeLeft, isRunning, onTimeUp]);
 
     const progress = (timeLeft / duration) * 100;
 
