@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">HDeQuiz</string>
+    <string name="title_activity_main">HDeQuiz</string>
+    <string name="package_name">com.hdequiz.app</string>
+    <string name="custom_url_scheme">com.hdequiz.app</string>
+</resources>
