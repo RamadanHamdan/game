@@ -401,6 +401,7 @@ const GameContainer = () => {
             <div className="shrink-0 flex flex-col items-center gap-1 max-h-[12vh]">
                 <div className="w-full max-w-2xl transform scale-75 origin-top">
                     <Timer
+                        key={currentRound}
                         duration={10}
                         onTimeUp={handleRoundEnd}
                         isRunning={gameState === 'playing'}
