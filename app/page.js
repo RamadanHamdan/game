@@ -92,65 +92,88 @@ export default function Home() {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center bg-[#35a8ba] text-white relative overflow-hidden">
-      <div className="absolute inset-0 bg-gray-900 pointer-events-none" />
+    <div className="w-full h-screen flex flex-col items-center justify-center bg-[#35A8BA] text-slate-900 relative overflow-hidden">
+      {/* Subtle Background Pattern */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
+      </div>
+
       <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="z-10 flex flex-col items-center gap-8 glass-panel p-16 border-t border-white/20 shadow-2xl"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="z-10 flex flex-col items-center gap-6 bg-[#35A8BA] p-12 md:p-16 rounded-3xl shadow-xl max-w-2xl w-full mx-4"
       >
-        <Crown size={80} className="text-yellow-400 filter drop-shadow-[0_0_20px_rgba(255,215,0,0.6)]" />
-        <h1 className="text-6xl font-black bg-clip-text text-white tracking-tighter" style={{ fontFamily: 'monospace' }}>
+        <div className="bg-yellow-50 p-4 rounded-full mb-2">
+          <Crown size={64} className="text-yellow-500" />
+        </div>
+
+        <h1 className="text-5xl font-black text-white tracking-tight text-center" style={{ fontFamily: 'monospace' }}>
           EduQuiz
         </h1>
-        <p className="text-xl opacity-80 max-w-md text-center">
-          4/10 Players Games <br /> Answer fast to charge your battery!
+
+        <p className="text-lg text-white text-center max-w-md leading-relaxed">
+          A fast-paced multiplayer quiz game.<br />
+          <span className="text-sm font-medium text-white mt-1 block">Up to 10 Players • Rapid Fire • Competitive</span>
         </p>
 
-        {/* Excel Upload Section */}
-        <div className="flex flex-col items-center gap-2 mb-4">
-          <label className="flex items-center gap-2 cursor-pointer bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 px-4 py-2 rounded-lg border border-blue-500/50 transition-colors">
-            <Upload size={18} />
-            <span className="text-sm font-semibold">Upload Questions (Excel)</span>
-            <input
-              type="file"
-              accept=".xlsx, .xls"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-          </label>
-          {uploadError && <p className="text-red-400 text-xs">{uploadError}</p>}
+        <div className="w-full h-px bg-white my-4"></div>
+
+        {/* Actions Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+          {/* Upload Section */}
+          <div className="col-span-full flex flex-col gap-2">
+            <label className="flex items-center justify-center gap-3 cursor-pointer bg-slate-50 hover:bg-slate-100 text-slate-600 px-6 py-4 rounded-xl border-2 border-dashed border-slate-200 hover:border-slate-300 transition-all group">
+              <div className="bg-white p-2 rounded-lg shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
+                <Upload size={20} className="text-blue-500" />
+              </div>
+              <div>
+                <span className="font-semibold block text-sm">Upload Excel File</span>
+                <span className="text-xs text-slate-400 block">.xlsx custom questions</span>
+              </div>
+              <input
+                type="file"
+                accept=".xlsx, .xls"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </label>
+            {uploadError && <p className="text-red-500 text-xs text-center font-medium bg-red-50 py-1 rounded">{uploadError}</p>}
+          </div>
+
+          <button
+            onClick={handleDownloadTemplate}
+            className="flex items-center justify-center gap-2 cursor-pointer bg-white hover:bg-slate-50 text-slate-600 px-4 py-3 rounded-xl border border-slate-200 shadow-sm transition-all text-sm font-medium"
+          >
+            <Download size={16} />
+            Download Template
+          </button>
+
+          <button
+            onClick={() => {
+              if (confirm("Reset to default questions?")) {
+                sessionStorage.removeItem('quizQuestions');
+                setUploadError(null);
+                alert("Questions reset to default.");
+                window.location.reload();
+              }
+            }}
+            className="flex items-center justify-center gap-2 cursor-pointer bg-white hover:bg-slate-50 text-slate-600 px-4 py-3 rounded-xl border border-slate-200 shadow-sm transition-all text-sm font-medium"
+          >
+            <span className="">Reset Defaults</span>
+          </button>
         </div>
 
         <button
-          onClick={handleDownloadTemplate}
-          className="flex items-center gap-2 cursor-pointer bg-green-600/20 hover:bg-green-600/40 text-green-300 px-4 py-2 rounded-lg border border-green-500/50 transition-colors"
-        >
-          <Download size={18} />
-          <span className="text-sm font-semibold">Download Template</span>
-        </button>
-
-        <button
-          onClick={() => {
-            if (confirm("Reset to default questions? This will clear any uploaded file.")) {
-              sessionStorage.removeItem('quizQuestions');
-              setUploadError(null);
-              alert("Questions reset to default.");
-              window.location.reload();
-            }
-          }}
-          className="flex items-center gap-2 cursor-pointer bg-red-600/20 hover:bg-red-600/40 text-red-300 px-4 py-2 rounded-lg border border-red-500/50 transition-colors"
-        >
-          <span className="text-sm font-semibold">Reset to Default</span>
-        </button>
-
-        <button
           onClick={startGame}
-          className="group relative px-12 py-4 bg-white text-black text-xl font-bold rounded-full hover:scale-105 transition-transform overflow-hidden cursor-pointer"
+          className="w-full mt-4 px-8 py-5 bg-slate-900 text-white text-lg font-bold rounded-xl hover:bg-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
         >
-          START GAME
+          START NEW GAME
         </button>
       </motion.div>
+
+      <div className="absolute bottom-6 text-slate-400 text-xs font-mono">
+        v1.0 • Built with Next.js
+      </div>
     </div>
   );
 }

@@ -3,12 +3,21 @@ import { motion } from 'framer-motion';
 import { User, Trophy, Check, X, Clock } from 'lucide-react';
 import Battery from './Battery';
 
-const PlayerCard = ({ player, question, hasAnswered, result, isWinner, onAnswer }) => {
+const PlayerCard = ({ player, question, hasAnswered, result, isWinner, onAnswer, rank }) => {
     // question: { question: "...", options: ["...", ...], ... }
     // onAnswer: (optionIndex) => void
 
+    // Rank styling
+    const getRankStyle = (r) => {
+        if (r === 1) return 'bg-yellow-400 text-black border-yellow-200 shadow-[0_0_15px_rgba(255,215,0,0.5)]';
+        if (r === 2) return 'bg-gray-300 text-black border-white shadow-[0_0_10px_rgba(255,255,255,0.3)]';
+        if (r === 3) return 'bg-orange-400 text-black border-orange-200 shadow-[0_0_10px_rgba(255,165,0,0.3)]';
+        return 'bg-white/10 text-white/50 border-white/5';
+    };
+
     return (
         <motion.div
+            layout // Enable smooth reordering animation
             className={`glass-panel p-1.5 md:p-2 flex flex-col items-center gap-0.5 relative transition-all duration-300 w-full h-full min-h-0
         ${hasAnswered ? 'border-blue-400 shadow-[0_0_15px_rgba(50,50,255,0.3)]' : 'border-white/10'}
         ${result === 'correct' ? '!border-green-500 !shadow-[0_0_30px_rgba(0,255,0,0.4)]' : ''}
@@ -16,8 +25,13 @@ const PlayerCard = ({ player, question, hasAnswered, result, isWinner, onAnswer 
         ${isWinner ? '!border-yellow-400 !shadow-[0_0_50px_rgba(255,215,0,0.6)] scale-105 z-10' : ''}
       `}
         >
+            {/* Rank Badge (Absolute Top-Left) */}
+            <div className={`absolute -top-2 -left-2 w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center font-bold text-xs md:text-sm border-2 z-20 ${getRankStyle(rank)}`}>
+                #{rank}
+            </div>
+
             {/* Inputs Header */}
-            <div className="flex justify-between w-full items-center shrink-0">
+            <div className="flex justify-between w-full items-center shrink-0 pl-3"> {/* Added padding-left for rank badge */}
                 {/* Avatar */}
                 <div
                     className="w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center text-sm md:text-xl shadow-lg border-2 relative shrink-0"
