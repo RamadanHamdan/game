@@ -6,11 +6,13 @@ import { Crown, Download, Upload } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useRouter } from 'next/navigation';
 
+import { saveAsXLSX } from '../lib/ExcelUtils';
+
 export default function Home() {
   const router = useRouter();
   const [uploadError, setUploadError] = useState(null);
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
     const templateData = [
       {
         question: "Question text here?",
@@ -25,7 +27,7 @@ export default function Home() {
     const ws = XLSX.utils.json_to_sheet(templateData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Template");
-    XLSX.writeFile(wb, "quiz_template.xlsx");
+    await saveAsXLSX(wb, "quiz_template.xlsx");
   };
 
   const handleFileUpload = (e) => {
@@ -92,16 +94,16 @@ export default function Home() {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center bg-[#35A8BA] text-slate-900 relative overflow-hidden">
+    <div className="w-full h-screen flex flex-col items-center justify-center bg-[#35A8BA] bg-black/10 text-slate-900 relative overflow-hidden">
       {/* Subtle Background Pattern */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
         style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="z-10 flex flex-col items-center gap-6 bg-[#35A8BA] p-12 md:p-16 rounded-3xl shadow-xl max-w-2xl w-full mx-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="z-10 flex flex-col items-center gap-6 bg-[#35A8BA] p-12 md:p-16 rounded-3xl shadow-lg max-w-2xl w-full mx-4"
       >
         <div className="bg-yellow-50 p-4 rounded-full mb-2">
           <Crown size={64} className="text-yellow-500" />
@@ -170,10 +172,6 @@ export default function Home() {
           START NEW GAME
         </button>
       </motion.div>
-
-      <div className="absolute bottom-6 text-slate-400 text-xs font-mono">
-        v1.0 • Built with Next.js
-      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.eduquiz.app',
+  appId: 'com.hdequiz.app',
   appName: 'EduQuiz',
   webDir: 'out'
 };

@@ -1,16 +1,5 @@
 'use client';
 
-
-
-
-
-
-
-
-
-
-
-
 if (!gameStarted) {
     return (
         <div className="w-full h-screen flex flex-col items-center justify-center bg-gray-900 text-white relative overflow-hidden">
@@ -27,7 +16,6 @@ if (!gameStarted) {
                 <p className="text-xl opacity-80 max-w-md text-center">
                     4 Players Games <br /> Answer fast to charge your battery!
                 </p>
-
                 {/* Excel Upload Section */}
                 <div className="flex flex-col items-center gap-2 mb-4">
                     <label className="flex items-center gap-2 cursor-pointer bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 px-4 py-2 rounded-lg border border-blue-500/50 transition-colors">
@@ -42,7 +30,6 @@ if (!gameStarted) {
                     </label>
                     {uploadError && <p className="text-red-400 text-xs">{uploadError}</p>}
                 </div>
-
                 <button
                     onClick={handleDownloadTemplate}
                     className="flex items-center gap-2 cursor-pointer bg-green-600/20 hover:bg-green-600/40 text-green-300 px-4 py-2 rounded-lg border border-green-500/50 transition-colors"
@@ -50,7 +37,6 @@ if (!gameStarted) {
                     <Download size={18} />
                     <span className="text-sm font-semibold">Download Template</span>
                 </button>
-
                 <button
                     onClick={() => setGameStarted(true)}
                     className="group relative px-12 py-4 bg-white text-black text-xl font-bold rounded-full hover:scale-105 transition-transform overflow-hidden"

@@ -77,20 +77,6 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                     <div className="w-10"></div> {/* Spacer for centering */}
                 </div>
 
-                {/* File Actions */}
-                <div className="flex gap-4 mb-4 justify-center">
-                    <label className="btn flex items-center gap-2 bg-blue-500/20 md:hover:bg-blue-500/40 border-blue-500 text-sm py-2 px-4 rounded-lg cursor-pointer transition">
-                        <Upload size={16} />
-                        <span className="hidden md:inline">Upload Questions</span>
-                        <span className="md:hidden">Upload</span>
-                        <input type="file" accept=".xlsx, .xls" onChange={onUpload} className="hidden" />
-                    </label>
-                    <button onClick={onDownloadTemplate} className="btn flex items-center gap-2 bg-white/5 md:hover:bg-white/10 border-white/20 text-sm py-2 px-4 rounded-lg transition">
-                        <Download size={16} />
-                        <span className="hidden md:inline">Template</span>
-                    </button>
-                </div>
-
                 {/* Horizontal Scrolling Container */}
                 <div className="flex-1 overflow-x-auto overflow-y-hidden pb-4 px-2 min-h-0 custom-scrollbar flex items-center gap-4">
                     <AnimatePresence mode='popLayout'>
@@ -157,7 +143,26 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                     </motion.button>
                 </div>
 
-                <div className="mt-4 flex justify-center shrink-0 pt-4 border-t border-blue-500/30 w-full relative">
+                <div className="mt-4 flex flex-col items-center gap-4 shrink-0 pt-4 border-t border-blue-500/30 w-full relative">
+                    <div className="flex gap-4 mb-2">
+                        <label className="flex items-center gap-2 cursor-pointer bg-blue-500/20 hover:bg-blue-500/40 text-blue-200 px-4 py-2 rounded-lg border border-blue-500/50 transition-colors text-sm font-semibold">
+                            <Upload size={18} />
+                            Upload Questions
+                            <input
+                                type="file"
+                                accept=".xlsx, .xls"
+                                onChange={onUpload}
+                                className="hidden"
+                            />
+                        </label>
+                        <button
+                            onClick={onDownloadTemplate}
+                            className="flex items-center gap-2 cursor-pointer bg-green-500/20 hover:bg-green-500/40 text-green-200 px-4 py-2 rounded-lg border border-green-500/50 transition-colors text-sm font-semibold"
+                        >
+                            <Download size={18} />
+                            Template
+                        </button>
+                    </div>
                     <button
                         onClick={() => onStartGame(players)}
                         className="btn bg-green-500/20 border-green-500/50 hover:bg-green-500/40 text-xl px-12 py-4 shadow-[0_0_20px_rgba(0,255,0,0.2)] rounded-xl w-full md:w-auto font-bold tracking-wider hover:scale-105 transition-transform"
