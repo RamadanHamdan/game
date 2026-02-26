@@ -1,0 +1,53 @@
+﻿./gradlew : 
+At line:1 char:1
++ ./gradlew 
+assembleDebug > 
+build_output3.txt 2>&1; 
+Get-Content build_o ...
++ ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo      
+        : NotSpecified  
+  : (:String) [], Rem   
+ oteException
+    + FullyQualifiedErr 
+   orId : NativeComman  
+  dError
+ 
+FAILURE: Build failed 
+with an exception.
+
+* Where:
+Build file 'C:\Users\ram
+ad\data_coding\game\andr
+oid\build.gradle' line: 
+27
+
+* What went wrong:
+A problem occurred 
+evaluating root project 
+'android'.
+> Could not find method 
+java() for arguments [bu
+ild_bxf57951wvqg2ooc8y27
+cy9ss$_run_closure1$_clo
+sure4@7b42c01d] on root 
+project 'android' of 
+type 
+org.gradle.api.Project.
+
+* Try:
+> Run with --stacktrace 
+option to get the stack 
+trace.
+> Run with --info or 
+--debug option to get 
+more log output.
+> Run with --scan to 
+generate a Build Scan 
+(powered by Develocity).
+> Get more help at 
+https://help.gradle.org.
+
+BUILD FAILED in 1s

@@ -10,6 +10,7 @@ import AIGenerator from './AIGenerator';
 import { Crown, RefreshCw, Trophy, Upload, Volume2, VolumeX, Download, Pause, Play, Sparkles } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useRouter } from 'next/navigation';
+import { saveAsXLSX } from '../lib/ExcelUtils';
 
 // DnD Kit Imports
 import {
@@ -319,14 +320,14 @@ const GameContainer = () => {
         reader.readAsBinaryString(file);
     };
 
-    const handleDownloadTemplate = () => {
+    const handleDownloadTemplate = async () => {
         const template = [
             { Question: "Example Question?", OptionA: "Answer 1", OptionB: "Answer 2", OptionC: "Answer 3", OptionD: "Answer 4", Answer: "Answer 1" }
         ];
         const ws = XLSX.utils.json_to_sheet(template);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Template");
-        XLSX.writeFile(wb, "quiz_template.xlsx");
+        await saveAsXLSX(wb, "quiz_template.xlsx");
     };
 
     const toggleMute = () => {
@@ -369,7 +370,7 @@ const GameContainer = () => {
         return leaderboard;
     };
 
-    const handleDownloadResults = () => {
+    const handleDownloadResults = async () => {
         const leaderboard = getLeaderboard();
         const leaderboardData = leaderboard.map(p => ({
             "Rank": p.rank,
@@ -391,7 +392,7 @@ const GameContainer = () => {
         XLSX.utils.book_append_sheet(wb, wsLeaderboard, "Leaderboard");
         XLSX.utils.book_append_sheet(wb, wsHistory, "Answer Details");
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        XLSX.writeFile(wb, `quiz_results_${timestamp}.xlsx`);
+        await saveAsXLSX(wb, `quiz_results_${timestamp}.xlsx`);
     };
 
     useEffect(() => {
