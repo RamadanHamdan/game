@@ -63,43 +63,20 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-panel p-4 md:p-8 w-full max-w-[95vw] h-[80vh] flex flex-col border border-blue-500/50 shadow-[0_0_30px_rgba(0,100,255,0.2)]"
+                className="glass-panel p-4 w-full max-w-[95vw] h-[80vh] flex flex-col border border-white-500/50 shadow-[0_0_30px_rgba(0,100,255,0.2)]"
             >
                 <div className="flex items-center justify-between mb-4 md:mb-6 shrink-0 relative">
                     <button
                         onClick={() => router.push('/')}
-                        className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/70 hover:text-white"
+                        className="p-1 hover:bg-white/10 rounded-full transition-colors text-white/70 hover:text-white"
                         title="Back to Home"
                     >
                         <StepBackIcon />
                     </button>
-                    <h2 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r text-white absolute left-1/2 -translate-x-1/2">
+                    <h2 className="text-2xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r text-white absolute left-1/2 -translate-x-1/2">
                         PLAYER REGISTRATION
                     </h2>
                     <div className="w-10"></div> {/* Spacer for centering */}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
-                    <button
-                        onClick={onOpenAIWizard}
-                        className="btn bg-linear-to-r from-blue-600 to-purple-600 border-blue-400/50 hover:scale-105 px-8 py-3 rounded-xl flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)]"
-                    >
-                        <Sparkles size={20} className="text-yellow-300" />
-                        <span className="font-bold">GENERATE WITH AI (SOAL)</span>
-                    </button>
-                    <label className="btn bg-blue-500/20 border-blue-500/50 hover:bg-blue-500/40 px-8 py-3 rounded-xl cursor-pointer flex items-center gap-2 transition-all">
-                        <Upload size={20} />
-                        <span>IMPORT QUESTIONS (EXCEL)</span>
-                        <input type="file" accept=".xlsx, .xls" onChange={onUpload} className="hidden" />
-                    </label>
-                    <button
-                        onClick={onDownloadTemplate}
-                        className="btn bg-white/5 border-white/20 hover:bg-white/10 px-8 py-3 rounded-xl flex items-center gap-2 transition-all"
-                    >
-                        <Download size={20} />
-                        <span>DOWNLOAD TEMPLATE</span>
-                    </button>
                 </div>
 
                 {/* Horizontal Scrolling Container */}
@@ -112,13 +89,13 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                                 initial={{ opacity: 0, scale: 0.8, x: -20 }}
                                 animate={{ opacity: 1, scale: 1, x: 0 }}
                                 exit={{ opacity: 0, scale: 0.8 }}
-                                className="bg-black/40 p-4 rounded-2xl border border-blue-500/30 flex flex-col items-center gap-4 shrink-0 w-[200px] h-[300px] relative group hover:border-blue-400 transition-colors"
+                                className="bg-black/40 p-3 rounded-xl border border-blue-500/30 flex flex-col items-center gap-2 shrink-0 w-[160px] h-[240px] relative group hover:border-blue-400 transition-colors"
                             >
                                 <div className="absolute top-2 right-2 z-10">
                                     <button
                                         onClick={() => removePlayer(p.id)}
                                         disabled={players.length <= 1}
-                                        className="p-2 text-red-400 hover:bg-red-400/20 rounded-full transition disabled:opacity-0"
+                                        className="p-1.5 text-red-400 hover:bg-red-400/20 rounded-full transition disabled:opacity-0"
                                     >
                                         <Trash2 size={18} />
                                     </button>
@@ -129,9 +106,9 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                                 {/* Avatar Button - Opens Modal */}
                                 <button
                                     onClick={() => handleAvatarClick(p.id)}
-                                    className="relative group/avatar mt-2"
+                                    className="relative group/avatar mt-0"
                                 >
-                                    <div className="text-6xl w-24 h-24 rounded-full flex items-center justify-center bg-white/5 border-2 border-white/10 group-hover/avatar:border-blue-400 transition-all shadow-lg transform group-hover/avatar:scale-105"
+                                    <div className="text-5xl w-20 h-20 rounded-full flex items-center justify-center bg-white/5 border-2 border-white/10 group-hover/avatar:border-blue-400 transition-all shadow-lg transform group-hover/avatar:scale-105"
                                         style={{ backgroundColor: p.color + '20', borderColor: p.color }}
                                     >
                                         {p.avatar}
@@ -142,12 +119,12 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                                 </button>
 
                                 <div className="w-full mt-auto">
-                                    <label className="text-xs text-white/50 mb-1 block text-center">Name</label>
+                                    <label className="text-xs text-white/50 mb-0.5 block text-center">Name</label>
                                     <input
                                         type="text"
                                         value={p.name}
                                         onChange={(e) => updatePlayer(p.id, 'name', e.target.value)}
-                                        className="bg-white/5 w-full border border-white/10 rounded-lg px-3 py-2 text-center text-lg focus:outline-none focus:border-blue-500 transition focus:bg-white/10"
+                                        className="bg-white/5 w-full border border-white/10 rounded-lg px-2 py-1.5 text-center text-base focus:outline-none focus:border-blue-500 transition focus:bg-white/10"
                                         placeholder="Enter Name"
                                     />
                                 </div>
@@ -159,7 +136,7 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                     <motion.button
                         layout
                         onClick={addPlayer}
-                        className="w-[100px] h-[300px] shrink-0 border-2 border-dashed border-blue-500/30 rounded-2xl flex flex-col items-center justify-center gap-2 text-blue-200/50 hover:text-blue-200 hover:border-blue-500/50 hover:bg-blue-500 transition group"
+                        className="w-[100px] h-[240px] shrink-0 border-2 border-dashed border-white-500/30 rounded-xl flex flex-col items-center justify-center gap-2 text-blue-200/50 hover:text-blue-200 hover:border-blue-500/50 hover:bg-blue-500 transition group"
                     >
                         <div className="w-12 h-12 rounded-full border-2 border-current flex items-center justify-center group-hover:scale-110 transition">
                             <Plus size={24} />
@@ -168,10 +145,10 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                     </motion.button>
                 </div>
 
-                <div className="mt-4 flex flex-col items-center gap-4 shrink-0 pt-4 border-t border-blue-500/30 w-full relative">
-                    <div className="flex gap-4 mb-2">
-                        <label className="flex items-center gap-2 cursor-pointer bg-blue-500/20 hover:bg-blue-500/40 text-blue-200 px-4 py-2 rounded-lg border border-blue-500/50 transition-colors text-sm font-semibold">
-                            <Upload size={18} />
+                <div className="mt-2 flex flex-col items-center gap-3 shrink-0 pt-3 border-t border-white-500 w-full relative">
+                    <div className="flex flex-wrap justify-center gap-3 mb-1">
+                        <label className="flex items-center gap-2 cursor-pointer bg-blue-500/20 hover:bg-blue-500/40 text-blue-200 px-3 py-1.5 rounded-lg border border-blue-500/50 transition-colors text-xs md:text-sm font-semibold">
+                            <Upload size={16} />
                             Upload Questions
                             <input
                                 type="file"
@@ -182,17 +159,24 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                         </label>
                         <button
                             onClick={onDownloadTemplate}
-                            className="flex items-center gap-2 cursor-pointer bg-green-500/20 hover:bg-green-500/40 text-green-200 px-4 py-2 rounded-lg border border-green-500/50 transition-colors text-sm font-semibold"
+                            className="flex items-center gap-2 cursor-pointer bg-green-500/20 hover:bg-green-500/40 text-green-200 px-3 py-1.5 rounded-lg border border-green-500/50 transition-colors text-xs md:text-sm font-semibold"
                         >
-                            <Download size={18} />
+                            <Download size={16} />
                             Template
+                        </button>
+                        <button
+                            onClick={onOpenAIWizard}
+                            className="flex items-center gap-2 cursor-pointer bg-yellow-500/20 hover:bg-yellow-500/40 text-white-200 px-3 py-1.5 rounded-lg border border-yellow-500/50 transition-colors text-xs md:text-sm font-semibold"
+                        >
+                            <Sparkles size={16} className="text-yellow-300" />
+                            <span className="font-semibold">GENERATE WITH AI (SOAL)</span>
                         </button>
                     </div>
                     <button
                         onClick={() => onStartGame(players)}
-                        className="btn bg-green-500/20 border-green-500/50 hover:bg-green-500/40 text-xl px-12 py-4 shadow-[0_0_20px_rgba(0,255,0,0.2)] rounded-xl w-full md:w-auto font-bold tracking-wider hover:scale-105 transition-transform"
+                        className="btn bg-green-500/20 border-green-500/50 hover:bg-green-500/40 text-base md:text-lg px-8 gap-4 py-2 mt-1 shadow-[0_0_20px_rgba(0,255,0,0.2)] rounded-xl w-full md:w-auto font-bold tracking-wider hover:scale-105 transition-transform"
                     >
-                        START GAME <span className="text-sm opacity-80 ml-2">({players.length} Players)</span>
+                        START GAME <span className="text-xs md:text-sm opacity-80 ml-1">({players.length} Players)</span>
                     </button>
                 </div>
 

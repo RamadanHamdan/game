@@ -103,7 +103,7 @@ const PlayerCard = ({ player, question, hasAnswered, result, isWinner, onAnswer,
                     )}
                 </div>
             ) : (
-                <div className="grid grid-cols-2 gap-1 w-full min-h-0 shrink-0 mb-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-1 w-full min-h-[90px] md:min-h-[100px] shrink-0 mb-1">
                     {question?.options?.map((opt, idx) => {
                         const isSelected = false;
 
@@ -126,14 +126,14 @@ const PlayerCard = ({ player, question, hasAnswered, result, isWinner, onAnswer,
                                 onTouchStart={handleInput}
                                 disabled={hasAnswered || result !== null}
                                 className={`
-                            text-[10px] md:text-xs font-bold py-1.5 px-2 md:py-2 rounded border transition-all text-left relative whitespace-normal wrap-break-word leading-tight h-full min-h-[40px] flex items-center
+                            text-[10px] md:text-xs font-bold py-1.5 px-2 md:py-2 rounded border transition-all text-left relative flex items-center h-full min-h-[40px] md:min-h-[45px]
                             ${hasAnswered ? 'opacity-50 cursor-not-allowed' : 'active:bg-white/20 hover:bg-white/10 cursor-pointer'}
                             ${showCorrect ? 'border-green-500! shadow-[0_0_10px_rgba(0,255,0,0.6)]! bg-green-500/20' : 'bg-black/20 border-white/10'}
                         `}
                                 title={opt}
                             >
-                                <span className="opacity-50 mr-1.5 shrink-0">{['A', 'B', 'C', 'D'][idx]}.</span>
-                                <span className="">{opt}</span>
+                                <span className="opacity-50 mr-1.5 shrink-0 self-start mt-0.5 md:mt-0">{['A', 'B', 'C', 'D'][idx]}.</span>
+                                <span className="wrap-break-word line-clamp-3 w-full" style={{ wordBreak: 'break-word' }}>{opt}</span>
                             </button>
                         )
                     })}

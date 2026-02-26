@@ -7,8 +7,34 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [settings, setSettings] = useState({
         subject: '',
-        format: 'multiple_choice'
+        customSubject: '', // For manual input if they choose 'Lainnya'
+        grade: '9', // Default to grade 9
+        format: 'multiple_choice',
+        count: 5
     });
+
+    // Core Subject Options
+    const SUBJECT_OPTIONS = [
+        "Tematik (SD)",
+        "Matematika",
+        "Bahasa Indonesia",
+        "Bahasa Inggris",
+        "Ilmu Pengetahuan Alam (IPA)",
+        "Ilmu Pengetahuan Sosial (IPS)",
+        "Pendidikan Pancasila dan Kewarganegaraan (PPKn)",
+        "Pendidikan Agama Islam",
+        "Seni Budaya",
+        "Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)",
+        "Informatika",
+        "Fisika",
+        "Biologi",
+        "Kimia",
+        "Sejarah",
+        "Geografi",
+        "Sosiologi",
+        "Ekonomi",
+        "Lainnya..."
+    ];
     const [showSettings, setShowSettings] = useState(false);
     const [customApiKey, setCustomApiKey] = useState('');
 
@@ -17,16 +43,22 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
     const apiKey = typeof window !== 'undefined' ? sessionStorage.getItem('gemini_api_key') : '';
 
     const handleGenerate = async () => {
-        if (!settings.subject) return;
+        const finalSubject = settings.subject === 'Lainnya...' ? settings.customSubject : settings.subject;
+
+        if (!finalSubject || !settings.grade) {
+            alert("Mohon isi Mata Pelajaran dan Kelas dengan lengkap.");
+            return;
+        }
 
         setIsGenerating(true);
         try {
             const formats = settings.format === 'both' ? ['multiple_choice', 'essay'] : [settings.format];
             const newQuestions = await generateAIQuestions(
-                settings.subject,
+                finalSubject,
+                settings.grade,
                 formats,
-                10,
-                customApiKey // Pass custom key if set
+                settings.count || 5,
+                customApiKey
             );
 
             if (newQuestions && newQuestions.length > 0) {
@@ -108,13 +140,56 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
 
                             <div className="flex flex-col gap-2">
                                 <label className="text-xs text-blue-300 font-bold uppercase tracking-widest ml-1">Mata Pelajaran</label>
-                                <input
-                                    type="text"
+                                <select
                                     value={settings.subject}
                                     onChange={(e) => setSettings(s => ({ ...s, subject: e.target.value }))}
-                                    placeholder="Contoh: Sejarah Indonesia, Matematika, Biologi..."
-                                    className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all placeholder:text-white/20"
-                                />
+                                    className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all cursor-pointer appearance-none"
+                                >
+                                    <option value="" disabled>-- Pilih Mata Pelajaran --</option>
+                                    {SUBJECT_OPTIONS.map((sub, idx) => (
+                                        <option key={idx} value={sub}>{sub}</option>
+                                    ))}
+                                </select>
+
+                                <AnimatePresence>
+                                    {settings.subject === 'Lainnya...' && (
+                                        <motion.input
+                                            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                                            animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
+                                            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                                            type="text"
+                                            value={settings.customSubject}
+                                            onChange={(e) => setSettings(s => ({ ...s, customSubject: e.target.value }))}
+                                            placeholder="Ketik mata pelajaran manual..."
+                                            className="bg-black/40 border border-yellow-500/50 rounded-xl px-4 py-3 text-white focus:border-yellow-400 outline-none transition-all placeholder:text-white/20"
+                                            autoFocus
+                                        />
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            <div className="flex gap-4">
+                                <div className="flex flex-col gap-2 flex-3">
+                                    <label className="text-xs text-blue-300 font-bold uppercase tracking-widest ml-1">Kelas / Tingkat</label>
+                                    <input
+                                        type="text"
+                                        value={settings.grade}
+                                        onChange={(e) => setSettings(s => ({ ...s, grade: e.target.value }))}
+                                        placeholder="Cth: 9, 12 IPA, Kuliah Semester 2..."
+                                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all placeholder:text-white/20 w-full"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2 flex-1 min-w-[100px]">
+                                    <label className="text-xs text-blue-300 font-bold uppercase tracking-widest ml-1">Jml Soal</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="50"
+                                        value={settings.count}
+                                        onChange={(e) => setSettings(s => ({ ...s, count: parseInt(e.target.value) || 5 }))}
+                                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all w-full text-center"
+                                    />
+                                </div>
                             </div>
 
                             <div className="flex flex-col gap-2">
@@ -137,8 +212,8 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
 
                             <button
                                 onClick={handleGenerate}
-                                disabled={isGenerating || !settings.subject}
-                                className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all ${isGenerating || !settings.subject
+                                disabled={isGenerating || !settings.subject || (settings.subject === 'Lainnya...' && !settings.customSubject) || !settings.grade}
+                                className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all ${isGenerating || !settings.subject || (settings.subject === 'Lainnya...' && !settings.customSubject) || !settings.grade
                                     ? 'bg-gray-800 text-white/20 cursor-not-allowed'
                                     : 'bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95'
                                     }`}

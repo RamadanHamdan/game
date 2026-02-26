@@ -130,8 +130,19 @@ const GameContainer = () => {
                 availableQuestions.push(...questions);
             }
             const randomIndex = Math.floor(Math.random() * availableQuestions.length);
-            const question = availableQuestions.splice(randomIndex, 1)[0];
-            newPlayerQuestions[p.id] = question;
+            const questionCopy = { ...availableQuestions.splice(randomIndex, 1)[0] };
+
+            // Randomize options for multiple choice questions
+            if (questionCopy.options && questionCopy.options.length > 0) {
+                const shuffledOptions = [...questionCopy.options];
+                for (let i = shuffledOptions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+                }
+                questionCopy.options = shuffledOptions;
+            }
+
+            newPlayerQuestions[p.id] = questionCopy;
         });
 
         setPlayerQuestions(newPlayerQuestions);
