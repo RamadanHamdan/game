@@ -20,9 +20,9 @@ const PlayerCard = ({ player, question, hasAnswered, result, isWinner, onAnswer,
             layout // Enable smooth reordering animation
             className={`glass-panel p-1.5 md:p-2 flex flex-col items-center gap-0.5 relative transition-all duration-300 w-full h-full min-h-0
         ${hasAnswered ? 'border-blue-400 shadow-[0_0_15px_rgba(50,50,255,0.3)]' : 'border-white/10'}
-        ${result === 'correct' ? '!border-green-500 !shadow-[0_0_30px_rgba(0,255,0,0.4)]' : ''}
-        ${result === 'wrong' ? '!border-red-500 opacity-80' : ''}
-        ${isWinner ? '!border-yellow-400 !shadow-[0_0_50px_rgba(255,215,0,0.6)] scale-105 z-10' : ''}
+        ${result === 'correct' ? 'border-green-500! shadow-[0_0_30px_rgba(0,255,0,0.4)]!' : ''}
+        ${result === 'wrong' ? 'border-red-500! opacity-80' : ''}
+        ${isWinner ? 'border-yellow-400! shadow-[0_0_50px_rgba(255,215,0,0.6)]! scale-105 z-10' : ''}
       `}
         >
             {/* Rank Badge (Absolute Top-Left) */}
@@ -70,44 +70,75 @@ const PlayerCard = ({ player, question, hasAnswered, result, isWinner, onAnswer,
                 </p>
             </div>
 
-            {/* Answer Buttons Grid */}
-            <div className="grid grid-cols-2 gap-1 w-full min-h-0 shrink-0 mb-1">
-                {question?.options?.map((opt, idx) => {
-                    const isSelected = false;
-
-                    const handleInput = (e) => {
-                        // Prevent default to stop scrolling/zooming/double-firing on touch
-                        // but only if it's a touch event to allow mouse clicks to work normally
-                        if (e.type === 'touchstart') {
-                            e.preventDefault();
-                        }
-                        if (!hasAnswered) {
-                            onAnswer(idx);
-                        }
-                    };
-
-                    const isCorrectAnswer = opt === question.answer;
-                    const showCorrect = result !== null && isCorrectAnswer;
-
-                    return (
+            {/* Answer Content */}
+            {question?.type === 'essay' ? (
+                <div className="w-full flex flex-col gap-2 flex-1 min-h-0">
+                    <textarea
+                        className={`w-full flex-1 bg-black/40 border border-white/10 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-blue-500 resize-none transition-all ${hasAnswered ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        placeholder="Type your answer here..."
+                        disabled={hasAnswered || result !== null}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey && !hasAnswered) {
+                                e.preventDefault();
+                                onAnswer(e.target.value);
+                            }
+                        }}
+                        onBlur={(e) => {
+                            // Optionally submit on blur if something was typed and not submitted?
+                            // For now, let's just use Enter or a submit button
+                        }}
+                    />
+                    {!hasAnswered && (
                         <button
-                            key={idx}
-                            onMouseDown={handleInput}
-                            onTouchStart={handleInput}
-                            disabled={hasAnswered || result !== null}
-                            className={`
-                        text-[10px] md:text-xs font-bold py-1.5 px-2 md:py-2 rounded border transition-all text-left relative whitespace-normal wrap-break-word leading-tight h-full min-h-[40px] flex items-center
-                        ${hasAnswered ? 'opacity-50 cursor-not-allowed' : 'active:bg-white/20 hover:bg-white/10 cursor-pointer'}
-                        ${showCorrect ? 'border-green-500! shadow-[0_0_10px_rgba(0,255,0,0.6)]! bg-green-500/20' : 'bg-black/20 border-white/10'}
-                    `}
-                            title={opt}
+                            onClick={(e) => {
+                                const ta = e.currentTarget.previousElementSibling;
+                                if (ta.value.trim() && !hasAnswered) {
+                                    onAnswer(ta.value);
+                                }
+                            }}
+                            className="bg-blue-600 hover:bg-blue-500 text-[10px] font-bold py-1 rounded transition-all active:scale-95 shrink-0"
                         >
-                            <span className="opacity-50 mr-1.5 shrink-0">{['A', 'B', 'C', 'D'][idx]}.</span>
-                            <span className="">{opt}</span>
+                            SUBMIT ANSWER
                         </button>
-                    )
-                })}
-            </div>
+                    )}
+                </div>
+            ) : (
+                <div className="grid grid-cols-2 gap-1 w-full min-h-0 shrink-0 mb-1">
+                    {question?.options?.map((opt, idx) => {
+                        const isSelected = false;
+
+                        const handleInput = (e) => {
+                            if (e.type === 'touchstart') {
+                                e.preventDefault();
+                            }
+                            if (!hasAnswered) {
+                                onAnswer(idx);
+                            }
+                        };
+
+                        const isCorrectAnswer = opt === question.answer;
+                        const showCorrect = result !== null && isCorrectAnswer;
+
+                        return (
+                            <button
+                                key={idx}
+                                onMouseDown={handleInput}
+                                onTouchStart={handleInput}
+                                disabled={hasAnswered || result !== null}
+                                className={`
+                            text-[10px] md:text-xs font-bold py-1.5 px-2 md:py-2 rounded border transition-all text-left relative whitespace-normal wrap-break-word leading-tight h-full min-h-[40px] flex items-center
+                            ${hasAnswered ? 'opacity-50 cursor-not-allowed' : 'active:bg-white/20 hover:bg-white/10 cursor-pointer'}
+                            ${showCorrect ? 'border-green-500! shadow-[0_0_10px_rgba(0,255,0,0.6)]! bg-green-500/20' : 'bg-black/20 border-white/10'}
+                        `}
+                                title={opt}
+                            >
+                                <span className="opacity-50 mr-1.5 shrink-0">{['A', 'B', 'C', 'D'][idx]}.</span>
+                                <span className="">{opt}</span>
+                            </button>
+                        )
+                    })}
+                </div>
+            )}
 
             {/* Battery (Horizontal) - Integrated at bottom */}
             <div className="w-full mt-auto pt-1">

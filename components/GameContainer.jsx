@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PlayerCard from './PlayerCard';
 import Timer from './Timer';
 import Registration from './Registration';
-import { Crown, RefreshCw, Trophy, Upload, Volume2, VolumeX, Download, Pause, Play } from 'lucide-react';
+import AIGenerator from './AIGenerator';
+import { Crown, RefreshCw, Trophy, Upload, Volume2, VolumeX, Download, Pause, Play, Sparkles } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useRouter } from 'next/navigation';
 
@@ -86,6 +87,7 @@ const GameContainer = () => {
     const [isMuted, setIsMuted] = useState(false);
     const [activeDragId, setActiveDragId] = useState(null);
     const [isPaused, setIsPaused] = useState(false);
+    const [showAIGenerator, setShowAIGenerator] = useState(false);
 
     const togglePause = () => {
         setIsPaused(prev => !prev);
@@ -103,27 +105,7 @@ const GameContainer = () => {
         })
     );
 
-    // Load default questions initially
-    useEffect(() => {
-        const storedQuestions = sessionStorage.getItem('quizQuestions');
-        if (storedQuestions) {
-            try {
-                setQuestions(JSON.parse(storedQuestions));
-                setGameState('registration');
-            } catch (e) {
-                console.error("Failed to parse stored questions", e);
-                loadDefaultQuestions();
-            }
-        } else {
-            loadDefaultQuestions();
-        }
-
-        return () => {
-            soundManager.stopBGM();
-        };
-    }, []);
-
-    const loadDefaultQuestions = () => {
+    const loadDefaultQuestions = React.useCallback(() => {
         fetch('/questions.json')
             .then(res => res.json())
             .then(data => {
@@ -134,9 +116,9 @@ const GameContainer = () => {
                 console.error("Failed to load questions", err);
                 setGameState('error');
             });
-    };
+    }, []);
 
-    const startRound = (roundNum, currentPlayers) => {
+    const startRound = React.useCallback((roundNum, currentPlayers) => {
         if (!questions || questions.length === 0) return;
 
         const newPlayerQuestions = {};
@@ -156,7 +138,136 @@ const GameContainer = () => {
         setPlayerAnswers({});
         setRoundResults({});
         setGameState('playing');
-    };
+    }, [questions]);
+
+    const handleRoundEnd = React.useCallback(() => {
+        if (gameState !== 'playing') return;
+        setGameState('reveal');
+        const results = {};
+        let currentFinished = [...finishedPlayers];
+        let anyCorrect = false;
+
+        const newPlayers = players.map(p => {
+            if (currentFinished.some(fp => fp.playerId === p.id)) return p;
+            const myQuestion = playerQuestions[p.id];
+            const answer = playerAnswers[p.id];
+            if (!myQuestion) return p;
+
+            let isCorrect = false;
+            if (myQuestion.type === 'essay') {
+                isCorrect = typeof answer === 'string' && answer.trim().length > 0;
+            } else {
+                isCorrect = answer === myQuestion.answer;
+            }
+
+            if (isCorrect) anyCorrect = true;
+
+            setGameHistory(prev => [...prev, {
+                round: currentRound,
+                question: myQuestion.question,
+                playerId: p.id,
+                playerName: p.name,
+                answer: answer || "No Answer",
+                isCorrect: !!isCorrect,
+                correctAnswer: myQuestion.answer
+            }]);
+            results[p.id] = answer ? (isCorrect ? 'correct' : 'wrong') : 'wrong';
+            if (isCorrect) {
+                const newScore = p.score + 10;
+                if (newScore >= 100) {
+                    const nextRank = currentFinished.length + 1;
+                    currentFinished.push({ playerId: p.id, rank: nextRank, score: newScore });
+                }
+                return { ...p, score: newScore };
+            }
+            return p;
+        });
+
+        if (anyCorrect) soundManager.playCorrect(); else soundManager.playWrong();
+
+        const activePlayersAfterRound = newPlayers.filter(p => !currentFinished.some(fp => fp.playerId === p.id));
+        const sortedActivePlayers = [...activePlayersAfterRound].sort((a, b) => b.score - a.score);
+
+        let nextRank = currentFinished.length + 1;
+        const updatedFinishedPlayers = currentFinished.map(fp => {
+            if (fp.rank === 0) {
+                const player = newPlayers.find(p => p.id === fp.playerId);
+                if (player) {
+                    const lowerScorePlayers = sortedActivePlayers.filter(p => p.score < player.score).length;
+                    return { ...fp, rank: nextRank + lowerScorePlayers };
+                }
+            }
+            return fp;
+        });
+
+        updatedFinishedPlayers.sort((a, b) => {
+            const playerA = newPlayers.find(p => p.id === a.playerId);
+            const playerB = newPlayers.find(p => p.id === b.playerId);
+            if (playerA.score !== playerB.score) return playerB.score - playerA.score;
+            return a.rank - b.rank;
+        });
+
+        const finalFinishedPlayers = updatedFinishedPlayers.map((fp, index) => ({ ...fp, rank: index + 1 }));
+
+        setRoundResults(results);
+        setPlayers(newPlayers);
+        setFinishedPlayers(finalFinishedPlayers);
+        setPlayerAnswers({});
+
+        const anyFinished = newPlayers.some(p => finalFinishedPlayers.some(fp => fp.playerId === p.id));
+        const isMaxRounds = currentRound >= 50;
+
+        setTimeout(() => {
+            if (anyFinished || isMaxRounds) {
+                setGameState('winner');
+                soundManager.playWin();
+            } else {
+                startRound(currentRound + 1, newPlayers);
+            }
+        }, 4000);
+    }, [gameState, finishedPlayers, players, playerQuestions, playerAnswers, currentRound, startRound]);
+
+    const submitAnswer = React.useCallback((playerId, answerInput) => {
+        if (gameState !== 'playing') return;
+        if (isPaused) return;
+        if (playerAnswers[playerId] !== undefined) return;
+        if (finishedPlayers.some(fp => fp.playerId === playerId)) return;
+
+        const myQuestion = playerQuestions[playerId];
+        if (!myQuestion) return;
+
+        soundManager.playClick();
+
+        let answerValue;
+        if (typeof answerInput === 'number' && myQuestion.type !== 'essay') {
+            answerValue = myQuestion.options[answerInput];
+        } else {
+            answerValue = answerInput;
+        }
+
+        setPlayerAnswers(prev => ({ ...prev, [playerId]: answerValue }));
+    }, [gameState, isPaused, playerAnswers, finishedPlayers, playerQuestions]);
+
+    // Load default questions initially
+    useEffect(() => {
+        const storedQuestions = sessionStorage.getItem('quizQuestions');
+        if (storedQuestions) {
+            try {
+                const parsed = JSON.parse(storedQuestions);
+                setQuestions(parsed);
+                setGameState('registration');
+            } catch (e) {
+                console.error("Failed to parse stored questions", e);
+                loadDefaultQuestions();
+            }
+        } else {
+            loadDefaultQuestions();
+        }
+
+        return () => {
+            soundManager.stopBGM();
+        };
+    }, [loadDefaultQuestions]);
 
     const handleRegistrationComplete = (newPlayers) => {
         soundManager.init();
@@ -283,20 +394,6 @@ const GameContainer = () => {
         XLSX.writeFile(wb, `quiz_results_${timestamp}.xlsx`);
     };
 
-    const submitAnswer = (playerId, optionIndex) => {
-        if (gameState !== 'playing') return;
-        if (isPaused) return;
-        if (playerAnswers[playerId] !== undefined) return;
-        if (finishedPlayers.some(fp => fp.playerId === playerId)) return;
-
-        const myQuestion = playerQuestions[playerId];
-        if (!myQuestion) return;
-
-        soundManager.playClick();
-        const optionValue = myQuestion.options[optionIndex];
-        setPlayerAnswers(prev => ({ ...prev, [playerId]: optionValue }));
-    };
-
     useEffect(() => {
         if (!players) return;
         const handleKeyDown = (e) => {
@@ -308,7 +405,7 @@ const GameContainer = () => {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [gameState, playerAnswers, finishedPlayers]);
+    }, [gameState, submitAnswer, players]);
 
     useEffect(() => {
         if (gameState === 'playing') {
@@ -318,87 +415,8 @@ const GameContainer = () => {
                 handleRoundEnd();
             }
         }
-    }, [playerAnswers, gameState, finishedPlayers, players]);
+    }, [playerAnswers, gameState, finishedPlayers, players, handleRoundEnd]);
 
-    const handleRoundEnd = () => {
-        if (gameState !== 'playing') return;
-        setGameState('reveal');
-        const results = {};
-        let currentFinished = [...finishedPlayers];
-        let anyCorrect = false;
-
-        const newPlayers = players.map(p => {
-            if (currentFinished.some(fp => fp.playerId === p.id)) return p;
-            const myQuestion = playerQuestions[p.id];
-            const answer = playerAnswers[p.id];
-            if (!myQuestion) return p;
-            const isCorrect = answer === myQuestion.answer;
-            if (isCorrect) anyCorrect = true;
-
-            setGameHistory(prev => [...prev, {
-                round: currentRound,
-                question: myQuestion.question,
-                playerId: p.id,
-                playerName: p.name,
-                answer: answer || "No Answer",
-                isCorrect: !!isCorrect,
-                correctAnswer: myQuestion.answer
-            }]);
-            results[p.id] = answer ? (isCorrect ? 'correct' : 'wrong') : 'wrong';
-            if (isCorrect) {
-                const newScore = p.score + 10;
-                if (newScore >= 100) {
-                    const nextRank = currentFinished.length + 1;
-                    currentFinished.push({ playerId: p.id, rank: nextRank, score: newScore });
-                }
-                return { ...p, score: newScore };
-            }
-            return p;
-        });
-
-        if (anyCorrect) soundManager.playCorrect(); else soundManager.playWrong();
-
-        const activePlayersAfterRound = newPlayers.filter(p => !currentFinished.some(fp => fp.playerId === p.id));
-        const sortedActivePlayers = [...activePlayersAfterRound].sort((a, b) => b.score - a.score);
-
-        let nextRank = currentFinished.length + 1;
-        const updatedFinishedPlayers = currentFinished.map(fp => {
-            if (fp.rank === 0) {
-                const player = newPlayers.find(p => p.id === fp.playerId);
-                if (player) {
-                    const lowerScorePlayers = sortedActivePlayers.filter(p => p.score < player.score).length;
-                    return { ...fp, rank: nextRank + lowerScorePlayers };
-                }
-            }
-            return fp;
-        });
-
-        updatedFinishedPlayers.sort((a, b) => {
-            const playerA = newPlayers.find(p => p.id === a.playerId);
-            const playerB = newPlayers.find(p => p.id === b.playerId);
-            if (playerA.score !== playerB.score) return playerB.score - playerA.score;
-            return a.rank - b.rank;
-        });
-
-        const finalFinishedPlayers = updatedFinishedPlayers.map((fp, index) => ({ ...fp, rank: index + 1 }));
-
-        setRoundResults(results);
-        setPlayers(newPlayers);
-        setFinishedPlayers(finalFinishedPlayers);
-        setPlayerAnswers({});
-
-        const anyFinished = newPlayers.some(p => finalFinishedPlayers.some(fp => fp.playerId === p.id));
-        const isMaxRounds = currentRound >= 50;
-
-        setTimeout(() => {
-            if (anyFinished || isMaxRounds) {
-                setGameState('winner');
-                soundManager.playWin();
-            } else {
-                startRound(currentRound + 1, newPlayers);
-            }
-        }, 4000);
-    };
 
     const resetGame = () => {
         setPlayerAnswers({});
@@ -420,12 +438,24 @@ const GameContainer = () => {
 
     if (gameState === 'registration') {
         return (
-            <Registration
-                onStartGame={handleRegistrationComplete}
-                initialPlayers={players}
-                onUpload={handleFileUpload}
-                onDownloadTemplate={handleDownloadTemplate}
-            />
+            <>
+                <Registration
+                    onStartGame={handleRegistrationComplete}
+                    initialPlayers={players}
+                    onUpload={handleFileUpload}
+                    onDownloadTemplate={handleDownloadTemplate}
+                    onOpenAIWizard={() => setShowAIGenerator(true)}
+                />
+                <AIGenerator
+                    isOpen={showAIGenerator}
+                    onClose={() => setShowAIGenerator(false)}
+                    onQuestionsGenerated={(newQuestions) => {
+                        setQuestions(newQuestions);
+                        sessionStorage.setItem('quizQuestions', JSON.stringify(newQuestions));
+                        alert(`Berhasil menciptakan ${newQuestions.length} soal!`);
+                    }}
+                />
+            </>
         );
     }
 
@@ -469,7 +499,7 @@ const GameContainer = () => {
             <header className="flex justify-between items-center glass-panel px-2 py-1 shrink-0 h-[40px] md:h-[50px] border-blue-500/30">
                 <div className="flex items-center gap-2">
                     <Crown className="text-yellow-400 w-5 h-5 md:w-6 md:h-6" fill="currentColor" />
-                    <h1 className="text-lg md:text-xl font-bold bg-clip-text text-transparent bg-linear-to-r text-white" style={{ fontFamily: 'monospace' }}>
+                    <h1 className="text-lg md:text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-purple-400" style={{ fontFamily: 'monospace' }}>
                         EduQuiz
                     </h1>
                 </div>

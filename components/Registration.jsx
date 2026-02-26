@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Plus, StepBackIcon, X, Upload, Download } from 'lucide-react';
+import { Trash2, Plus, StepBackIcon, X, Upload, Download, RefreshCw, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { generateAIQuestions } from '../lib/ai';
 
 const AVATARS = ["🦁", "🦊", "🐼", "🐸", "🐯", "🐨", "🦄", "🐲", "🤖", "👽", "👻", "🤡", "💀", "💩", "🐔", "🦄"];
 const COLORS = ["#FF6B6B", "#4ECDC4", "#FFE66D", "#1A535C", "#FF9F1C", "#2EC4B6", "#E71D36", "#7209B7"];
 
-const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplate }) => {
+const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplate, onOpenAIWizard }) => {
     const router = useRouter();
     const [players, setPlayers] = useState(initialPlayers && initialPlayers.length > 0 ? initialPlayers : [
         { id: 1, name: "Player 1", avatar: "🦁", color: "#FF6B6B" },
         { id: 2, name: "Player 2", avatar: "🦊", color: "#4ECDC4" },
     ]);
+
 
     // Modal state for avatar selection
     const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -77,17 +79,26 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                     <div className="w-10"></div> {/* Spacer for centering */}
                 </div>
 
-                {/* File Actions */}
-                <div className="flex gap-4 mb-4 justify-center">
-                    <label className="btn flex items-center gap-2 bg-blue-500/20 md:hover:bg-blue-500/40 border-blue-500 text-sm py-2 px-4 rounded-lg cursor-pointer transition">
-                        <Upload size={16} />
-                        <span className="hidden md:inline">Upload Questions</span>
-                        <span className="md:hidden">Upload</span>
+                {/* Action Buttons */}
+                <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
+                    <button
+                        onClick={onOpenAIWizard}
+                        className="btn bg-linear-to-r from-blue-600 to-purple-600 border-blue-400/50 hover:scale-105 px-8 py-3 rounded-xl flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)]"
+                    >
+                        <Sparkles size={20} className="text-yellow-300" />
+                        <span className="font-bold">GENERATE WITH AI (SOAL)</span>
+                    </button>
+                    <label className="btn bg-blue-500/20 border-blue-500/50 hover:bg-blue-500/40 px-8 py-3 rounded-xl cursor-pointer flex items-center gap-2 transition-all">
+                        <Upload size={20} />
+                        <span>IMPORT QUESTIONS (EXCEL)</span>
                         <input type="file" accept=".xlsx, .xls" onChange={onUpload} className="hidden" />
                     </label>
-                    <button onClick={onDownloadTemplate} className="btn flex items-center gap-2 bg-white/5 md:hover:bg-white/10 border-white/20 text-sm py-2 px-4 rounded-lg transition">
-                        <Download size={16} />
-                        <span className="hidden md:inline">Template</span>
+                    <button
+                        onClick={onDownloadTemplate}
+                        className="btn bg-white/5 border-white/20 hover:bg-white/10 px-8 py-3 rounded-xl flex items-center gap-2 transition-all"
+                    >
+                        <Download size={20} />
+                        <span>DOWNLOAD TEMPLATE</span>
                     </button>
                 </div>
 
