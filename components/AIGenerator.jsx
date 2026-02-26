@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, RefreshCw, Sparkles, Brain, Settings } from 'lucide-react';
+import { X, RefreshCw, Sparkles, Brain } from 'lucide-react';
 import { generateAIQuestions } from '../lib/ai';
 
 const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
@@ -35,12 +35,7 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
         "Ekonomi",
         "Lainnya..."
     ];
-    const [showSettings, setShowSettings] = useState(false);
-    const [customApiKey, setCustomApiKey] = useState('');
 
-    // We retrieve the API key from sessionStorage or env if available
-    // but we don't show the input field to the user as requested
-    const apiKey = typeof window !== 'undefined' ? sessionStorage.getItem('gemini_api_key') : '';
 
     const handleGenerate = async () => {
         const finalSubject = settings.subject === 'Lainnya...' ? settings.customSubject : settings.subject;
@@ -57,8 +52,7 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
                 finalSubject,
                 settings.grade,
                 formats,
-                settings.count || 5,
-                customApiKey
+                settings.count || 5
             );
 
             if (newQuestions && newQuestions.length > 0) {
@@ -98,13 +92,6 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
                                 <h3 className="text-2xl font-bold text-white">AI Quiz Wizard</h3>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => setShowSettings(!showSettings)}
-                                    className={`p-2 rounded-full transition-colors ${showSettings ? 'bg-blue-500/20 text-blue-400' : 'text-white/30 hover:text-white/50'}`}
-                                    title="AI Settings"
-                                >
-                                    <Settings size={20} />
-                                </button>
                                 <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors">
                                     <X size={24} />
                                 </button>
@@ -112,31 +99,6 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
                         </div>
 
                         <div className="space-y-6">
-                            <AnimatePresence>
-                                {showSettings && (
-                                    <motion.div
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: 'auto', opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        className="overflow-hidden"
-                                    >
-                                        <div className="bg-blue-500/5 border border-blue-500/20 p-4 rounded-2xl mb-4">
-                                            <label className="text-[10px] text-blue-300 font-bold uppercase tracking-widest block mb-2">Override Gemini API Key</label>
-                                            <input
-                                                type="password"
-                                                value={customApiKey}
-                                                onChange={(e) => {
-                                                    setCustomApiKey(e.target.value);
-                                                    if (e.target.value) sessionStorage.setItem('gemini_api_key', e.target.value);
-                                                }}
-                                                placeholder="Enter your API Key here..."
-                                                className="bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs w-full focus:border-blue-500 outline-none transition-all"
-                                            />
-                                            <p className="text-[9px] text-white/30 mt-2">Dapatkan kunci gratis di <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="underline text-blue-400">Google AI Studio</a></p>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
 
                             <div className="flex flex-col gap-2">
                                 <label className="text-xs text-blue-300 font-bold uppercase tracking-widest ml-1">Mata Pelajaran</label>
