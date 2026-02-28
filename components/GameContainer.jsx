@@ -11,6 +11,7 @@ import { Crown, RefreshCw, Trophy, Upload, Volume2, VolumeX, Download, Pause, Pl
 import * as XLSX from 'xlsx';
 import { useRouter } from 'next/navigation';
 import { saveAsXLSX } from '../lib/ExcelUtils';
+import { StepBackIcon } from 'lucide-react';
 
 // DnD Kit Imports
 import {
@@ -515,6 +516,13 @@ const GameContainer = () => {
                         EduQuiz
                     </h1>
                 </div>
+                <button
+                    onClick={() => router.push('/')}
+                    className="gap-4 flex item-center justify-center hover:bg-white/10 rounded-full transition-colors text-white/70 hover:text-white"
+                    title="Back to Home"
+                >
+                    <StepBackIcon />
+                </button>
                 <div className="flex items-center gap-4">
                     {gameState === 'playing' && (
                         <button
@@ -577,6 +585,7 @@ const GameContainer = () => {
 
             {/* Players Grid with Drag and Drop */}
             <DndContext
+                id="dnd-context-game"
                 sensors={sensors}
                 collisionDetection={closestCenter}
                 onDragStart={handleDragStart}

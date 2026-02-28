@@ -99,7 +99,6 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
                         </div>
 
                         <div className="space-y-6">
-
                             <div className="flex flex-col gap-2">
                                 <label className="text-xs text-blue-300 font-bold uppercase tracking-widest ml-1">Mata Pelajaran</label>
                                 <select
@@ -193,10 +192,6 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
                                 )}
                             </button>
                         </div>
-
-                        <p className="text-[10px] text-white/20 text-center mt-6 uppercase tracking-widest font-bold">
-                            Powered by Gemini AI Engine
-                        </p>
                     </motion.div>
                 </motion.div>
             )}
