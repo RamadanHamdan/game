@@ -261,21 +261,27 @@ const GameContainer = () => {
         setPlayerAnswers(prev => ({ ...prev, [playerId]: answerValue }));
     }, [gameState, isPaused, playerAnswers, finishedPlayers, playerQuestions]);
 
-    // Load default questions initially
     useEffect(() => {
-        const storedQuestions = sessionStorage.getItem('quizQuestions');
-        if (storedQuestions) {
-            try {
-                const parsed = JSON.parse(storedQuestions);
-                setQuestions(parsed);
-                setGameState('registration');
-            } catch (e) {
-                console.error("Failed to parse stored questions", e);
+        const initializeQuestions = async () => {
+            // Defer the execution to avoid synchronous state updates
+            // inside the effect body (prevents cascading render warnings)
+            await Promise.resolve();
+            const storedQuestions = sessionStorage.getItem('quizQuestions');
+            if (storedQuestions) {
+                try {
+                    const parsed = JSON.parse(storedQuestions);
+                    setQuestions(parsed);
+                    setGameState('registration');
+                } catch (e) {
+                    console.error("Failed to parse stored questions", e);
+                    loadDefaultQuestions();
+                }
+            } else {
                 loadDefaultQuestions();
             }
-        } else {
-            loadDefaultQuestions();
-        }
+        };
+
+        initializeQuestions();
 
         return () => {
             soundManager.stopBGM();
@@ -425,7 +431,10 @@ const GameContainer = () => {
             const activePlayers = players.filter(p => !finishedPlayers.some(fp => fp.playerId === p.id));
             const activeAnswers = activePlayers.filter(p => playerAnswers[p.id] !== undefined);
             if ((activePlayers.length > 0 && activeAnswers.length === activePlayers.length) || (activePlayers.length === 0)) {
-                handleRoundEnd();
+                // Defer to prevent React "cascading renders" warning
+                Promise.resolve().then(() => {
+                    handleRoundEnd();
+                });
             }
         }
     }, [playerAnswers, gameState, finishedPlayers, players, handleRoundEnd]);
