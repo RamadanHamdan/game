@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { User, Trophy, Check, X, Clock } from 'lucide-react';
 import Battery from './Battery';
 
-const PlayerCard = ({ player, question, hasAnswered, result, isWinner, onAnswer, rank }) => {
+const PlayerCard = ({ player, question, hasAnswered, playerAnswer, result, isWinner, onAnswer, rank }) => {
     // question: { question: "...", options: ["...", ...], ... }
     // onAnswer: (optionIndex) => void
 
@@ -29,6 +29,14 @@ const PlayerCard = ({ player, question, hasAnswered, result, isWinner, onAnswer,
             <div className={`absolute -top-2 -left-2 w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center font-bold text-xs md:text-sm border-2 z-20 ${getRankStyle(rank)}`}>
                 #{rank}
             </div>
+
+            {/* Cup Points Badge (Absolute Top-Right) */}
+            {player.gamePoints > 0 && (
+                <div className="absolute -top-2 -right-2 bg-yellow-500 text-black px-1.5 py-0.5 md:px-2 md:py-1 rounded-full flex items-center justify-center font-bold text-[10px] md:text-sm border-2 border-yellow-300 z-20 shadow-[0_0_10px_rgba(255,215,0,0.4)] gap-0.5">
+                    <Trophy size={12} className="md:w-4 md:h-4" />
+                    {player.gamePoints}
+                </div>
+            )}
 
             {/* Inputs Header */}
             <div className="flex justify-between w-full items-center shrink-0 pl-3"> {/* Added padding-left for rank badge */}
@@ -105,7 +113,7 @@ const PlayerCard = ({ player, question, hasAnswered, result, isWinner, onAnswer,
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-1 w-full min-h-[90px] md:min-h-[100px] shrink-0 mb-1">
                     {question?.options?.map((opt, idx) => {
-                        const isSelected = false;
+                        const isSelected = playerAnswer === opt;
 
                         const handleInput = (e) => {
                             if (e.type === 'touchstart') {
@@ -128,7 +136,8 @@ const PlayerCard = ({ player, question, hasAnswered, result, isWinner, onAnswer,
                                 className={`
                             text-[10px] md:text-xs font-bold py-1.5 px-2 md:py-2 rounded border transition-all text-left relative flex items-center h-full min-h-[40px] md:min-h-[45px]
                             ${hasAnswered ? 'opacity-50 cursor-not-allowed' : 'active:bg-white/20 hover:bg-white/10 cursor-pointer'}
-                            ${showCorrect ? 'border-green-500! shadow-[0_0_10px_rgba(0,255,0,0.6)]! bg-green-500/20' : 'bg-black/20 border-white/10'}
+                            ${showCorrect ? 'border-green-500! shadow-[0_0_10px_rgba(0,255,0,0.6)]! bg-green-500/20' :
+                                        isSelected ? 'border-blue-500! shadow-[0_0_10px_rgba(0,0,255,0.6)]! bg-blue-500/20' : 'bg-black/20 border-white/10'}
                         `}
                                 title={opt}
                             >

@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Plus, StepBackIcon, X, Upload, Download, RefreshCw, Sparkles } from 'lucide-react';
+import { Trash2, Plus, StepBackIcon, X, Upload, Download, RefreshCw, Sparkles, Trophy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { generateAIQuestions } from '../lib/ai';
 
 const AVATARS = ["🦁", "🦊", "🐼", "🐸", "🐯", "🐨", "🦄", "🐲", "🤖", "👽", "👻", "🤡", "💀", "💩", "🐔", "🦄"];
 const COLORS = ["#FF6B6B", "#4ECDC4", "#FFE66D", "#1A535C", "#FF9F1C", "#2EC4B6", "#E71D36", "#7209B7"];
 
-const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplate, onOpenAIWizard }) => {
+const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplate, onOpenAIWizard, initialGameMode = 'default' }) => {
     const router = useRouter();
     const [players, setPlayers] = useState(initialPlayers && initialPlayers.length > 0 ? initialPlayers : [
         { id: 1, name: "Player 1", avatar: "🦁", color: "#FF6B6B" },
         { id: 2, name: "Player 2", avatar: "🦊", color: "#4ECDC4" },
     ]);
+    const [gameMode, setGameMode] = useState(initialGameMode);
+    const [cupTargetMatch, setCupTargetMatch] = useState(3);
 
 
     // Modal state for avatar selection
@@ -38,6 +40,7 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
 
     const addPlayer = () => {
         setPlayers(prev => {
+            if (prev.length >= 6) return prev;
             const newId = prev.length > 0 ? Math.max(...prev.map(p => p.id)) + 1 : 1;
             const randomAvatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
             const randomColor = COLORS[Math.floor(Math.random() * COLORS.length)];
@@ -59,28 +62,28 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
     };
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center p-4 md:p-8 text-white">
+        <div className="w-full h-full sm:h-dvh flex flex-col items-center justify-center p-2 sm:p-4 text-white">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-panel p-4 w-full max-w-[95vw] h-[80vh] flex flex-col border border-white-500/50 shadow-[0_0_30px_rgba(0,100,255,0.2)]"
+                className="glass-panel p-3 sm:p-5 md:p-6 w-full max-w-6xl h-[95vh] flex flex-col border border-white/20 shadow-2xl rounded-2xl md:rounded-3xl relative"
             >
-                <div className="flex items-center justify-between mb-4 md:mb-6 shrink-0 relative">
+                <div className="flex items-center justify-between mb-2 md:mb-4 shrink-0 px-2 md:px-4">
                     <button
                         onClick={() => router.push('/')}
-                        className="p-1 hover:bg-white/10 rounded-full transition-colors text-white/70 hover:text-white"
+                        className="p-2 sm:p-3 hover:bg-white/10 rounded-full transition-colors text-white/70 hover:text-white w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shrink-0 z-10"
                         title="Back to Home"
                     >
-                        <StepBackIcon />
+                        <StepBackIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
-                    <h2 className="text-2xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r text-white absolute left-1/2 -translate-x-1/2">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white text-center flex-1 mx-2 tracking-wide font-mono">
                         PLAYER REGISTRATION
                     </h2>
-                    <div className="w-10"></div> {/* Spacer for centering */}
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0"></div> {/* Spacer for perfect centering */}
                 </div>
 
                 {/* Horizontal Scrolling Container */}
-                <div className="flex-1 overflow-x-auto overflow-y-hidden pb-4 px-2 min-h-0 custom-scrollbar flex items-center gap-4">
+                <div className="flex-1 overflow-x-auto overflow-y-hidden pb-4 px-2 custom-scrollbar flex items-center justify-start xl:justify-center gap-3 sm:gap-4 md:gap-5 min-h-[220px]">
                     <AnimatePresence mode='popLayout'>
                         {players.map((p) => (
                             <motion.div
@@ -89,43 +92,43 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                                 initial={{ opacity: 0, scale: 0.8, x: -20 }}
                                 animate={{ opacity: 1, scale: 1, x: 0 }}
                                 exit={{ opacity: 0, scale: 0.8 }}
-                                className="bg-black/40 p-3 rounded-xl border border-blue-500/30 flex flex-col items-center gap-2 shrink-0 w-[160px] h-[240px] relative group hover:border-blue-400 transition-colors"
+                                className="bg-black/40 p-2 sm:p-3 rounded-xl border border-blue-500/30 flex flex-col items-center gap-1 sm:gap-2 shrink-0 w-[130px] sm:w-[150px] md:w-[160px] h-[210px] sm:h-[220px] md:h-[240px] relative group hover:border-blue-400 transition-colors shadow-xl"
                             >
-                                <div className="absolute top-2 right-2 z-10">
+                                <div className="absolute top-1 sm:top-2 right-1 sm:right-2 z-10">
                                     <button
                                         onClick={() => removePlayer(p.id)}
                                         disabled={players.length <= 1}
-                                        className="p-1.5 text-red-400 hover:bg-red-400/20 rounded-full transition disabled:opacity-0"
+                                        className="p-1 sm:p-1.5 text-red-500 hover:bg-red-500/20 rounded-full transition disabled:opacity-0"
                                     >
-                                        <Trash2 size={18} />
+                                        <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
                                     </button>
                                 </div>
 
-                                <label className="text-xs opacity-50 font-mono mt-2 self-start">PLAYER {p.id}</label>
+                                <label className="text-[10px] sm:text-xs opacity-50 font-mono mt-1 sm:mt-2 self-start font-bold">PLAYER {p.id}</label>
 
                                 {/* Avatar Button - Opens Modal */}
                                 <button
                                     onClick={() => handleAvatarClick(p.id)}
-                                    className="relative group/avatar mt-0"
+                                    className="relative group/avatar mt-0 sm:mt-1"
                                 >
-                                    <div className="text-5xl w-20 h-20 rounded-full flex items-center justify-center bg-white/5 border-2 border-white/10 group-hover/avatar:border-blue-400 transition-all shadow-lg transform group-hover/avatar:scale-105"
+                                    <div className="text-4xl sm:text-5xl w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center bg-white/5 border-2 border-white/10 group-hover/avatar:border-blue-400 transition-all shadow-lg transform group-hover/avatar:scale-105"
                                         style={{ backgroundColor: p.color + '20', borderColor: p.color }}
                                     >
                                         {p.avatar}
                                     </div>
-                                    <div className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-1.5 text-white shadow-md border-2 border-black">
-                                        <Plus size={14} strokeWidth={3} />
+                                    <div className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-1 sm:p-1.5 text-white shadow-md border-2 border-black">
+                                        <Plus size={12} className="sm:w-[14px] sm:h-[14px]" strokeWidth={3} />
                                     </div>
                                 </button>
 
                                 <div className="w-full mt-auto">
-                                    <label className="text-xs text-white/50 mb-0.5 block text-center">Name</label>
+                                    <label className="text-[10px] sm:text-xs text-white/50 mb-0.5 block text-center font-medium">Name</label>
                                     <input
                                         type="text"
                                         value={p.name}
                                         onChange={(e) => updatePlayer(p.id, 'name', e.target.value)}
-                                        className="bg-white/5 w-full border border-white/10 rounded-lg px-2 py-1.5 text-center text-base focus:outline-none focus:border-blue-500 transition focus:bg-white/10"
-                                        placeholder="Enter Name"
+                                        className="bg-white/5 w-full border border-white/10 rounded-lg px-2 py-1.5 sm:py-2 text-center text-sm sm:text-base font-bold focus:outline-none focus:border-blue-500 transition focus:bg-white/10"
+                                        placeholder="Name"
                                     />
                                 </div>
                             </motion.div>
@@ -136,20 +139,21 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                     <motion.button
                         layout
                         onClick={addPlayer}
-                        className="w-[100px] h-[240px] shrink-0 border-2 border-dashed border-white-500/30 rounded-xl flex flex-col items-center justify-center gap-2 text-blue-200/50 hover:text-blue-200 hover:border-blue-500/50 hover:bg-blue-500 transition group"
+                        className="w-[80px] sm:w-[100px] h-[210px] sm:h-[220px] md:h-[240px] shrink-0 border-2 border-dashed border-white/20 hover:border-blue-500/50 hover:bg-blue-500/10 rounded-xl flex flex-col items-center justify-center gap-2 text-white/40 hover:text-blue-200 transition group"
                     >
-                        <div className="w-12 h-12 rounded-full border-2 border-current flex items-center justify-center group-hover:scale-110 transition">
-                            <Plus size={24} />
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-current flex items-center justify-center group-hover:scale-110 transition bg-white/5">
+                            <Plus size={20} className="sm:w-[24px] sm:h-[24px]" />
                         </div>
-                        <span className="font-bold text-sm">ADD</span>
+                        <span className="font-bold text-xs sm:text-sm">ADD</span>
                     </motion.button>
                 </div>
 
-                <div className="mt-2 flex flex-col items-center gap-3 shrink-0 pt-3 border-t border-white-500 w-full relative">
-                    <div className="flex flex-wrap justify-center gap-3 mb-1">
-                        <label className="flex items-center gap-2 cursor-pointer bg-blue-500/20 hover:bg-blue-500/40 text-blue-200 px-3 py-1.5 rounded-lg border border-blue-500/50 transition-colors text-xs md:text-sm font-semibold">
+                <div className="mt-auto flex flex-col xl:flex-row items-center justify-between gap-3 md:gap-4 shrink-0 pt-3 md:pt-4 border-t border-white/20 w-full px-2 md:px-4">
+                    {/* Secondary Actions Container */}
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 w-full xl:w-auto">
+                        <label className="flex items-center justify-center gap-2 cursor-pointer bg-blue-500/10 hover:bg-blue-500/20 text-blue-200 px-3 py-2 md:py-3 rounded-xl border border-blue-500/30 transition-colors text-xs sm:text-sm font-semibold flex-1 sm:flex-none">
                             <Upload size={16} />
-                            Upload Questions
+                            <span>Upload <span className="hidden sm:inline">Questions</span></span>
                             <input
                                 type="file"
                                 accept=".xlsx, .xls"
@@ -159,25 +163,61 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                         </label>
                         <button
                             onClick={onDownloadTemplate}
-                            className="flex items-center gap-2 cursor-pointer bg-green-500/20 hover:bg-green-500/40 text-green-200 px-3 py-1.5 rounded-lg border border-green-500/50 transition-colors text-xs md:text-sm font-semibold"
+                            className="flex items-center justify-center gap-2 cursor-pointer bg-green-500/10 hover:bg-green-500/20 text-green-200 px-3 py-2 md:py-3 rounded-xl border border-green-500/30 transition-colors text-xs sm:text-sm font-semibold flex-1 sm:flex-none"
                         >
                             <Download size={16} />
-                            Template
+                            <span>Template</span>
                         </button>
                         <button
                             onClick={onOpenAIWizard}
-                            className="flex items-center gap-2 cursor-pointer bg-yellow-500/20 hover:bg-yellow-500/40 text-white-200 px-3 py-1.5 rounded-lg border border-yellow-500/50 transition-colors text-xs md:text-sm font-semibold"
+                            className="flex items-center justify-center gap-2 cursor-pointer bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-200 px-3 py-2 md:py-3 rounded-xl border border-yellow-500/30 transition-colors text-xs sm:text-sm font-semibold w-full sm:w-auto"
                         >
-                            <Sparkles size={16} className="text-yellow-300" />
-                            <span className="font-semibold">GENERATE WITH AI (SOAL)</span>
+                            <Sparkles size={16} className="text-yellow-400" />
+                            <span>GENERATE WITH AI</span>
                         </button>
                     </div>
-                    <button
-                        onClick={() => onStartGame(players)}
-                        className="btn bg-green-500/20 border-green-500/50 hover:bg-green-500/40 text-base md:text-lg px-8 gap-4 py-2 mt-1 shadow-[0_0_20px_rgba(0,255,0,0.2)] rounded-xl w-full md:w-auto font-bold tracking-wider hover:scale-105 transition-transform"
-                    >
-                        START GAME <span className="text-xs md:text-sm opacity-80 ml-1">({players.length} Players)</span>
-                    </button>
+
+                    {/* Primary Start Action */}
+                    <div className="flex flex-col items-center gap-2 xl:items-end w-full xl:w-auto xl:min-w-[280px] shrink-0 mt-1 xl:mt-0">
+                        {/* Game Mode Selector */}
+                        <div className="flex bg-black/40 rounded-lg p-1 border border-white/20 w-full sm:w-auto shadow-inner">
+                            <button
+                                onClick={() => setGameMode('default')}
+                                className={`flex-1 py-1 px-4 text-xs sm:text-sm font-bold rounded-md transition-all ${gameMode === 'default' ? 'bg-blue-500 text-white shadow-md' : 'text-white/50 hover:text-white/80 hover:bg-white/10'}`}
+                            >
+                                Default Mode
+                            </button>
+                            <button
+                                onClick={() => setGameMode('cup')}
+                                className={`flex-1 py-1 px-4 text-xs sm:text-sm font-bold rounded-md transition-all gap-1 flex items-center justify-center ${gameMode === 'cup' ? 'bg-yellow-500 text-black shadow-md' : 'text-white/50 hover:text-white/80 hover:bg-white/10'}`}
+                            >
+                                <Trophy size={14} className={gameMode === 'cup' ? 'text-black' : 'text-yellow-500/50'} />
+                                Cup Mode
+                            </button>
+                        </div>
+
+                        {/* Cup Settings */}
+                        {gameMode === 'cup' && (
+                            <div className="flex bg-black/40 rounded-lg p-2 border border-yellow-500/30 w-full shadow-inner justify-center items-center gap-2 animate-in fade-in slide-in-from-top-2">
+                                <label className="flex justify-center items-center text-xs text-yellow-300 font-bold uppercase tracking-widest flex-1">Choose Round</label>
+                                <input
+                                    type="number"
+                                    min="2"
+                                    max="10"
+                                    value={cupTargetMatch}
+                                    onChange={(e) => setCupTargetMatch(parseInt(e.target.value) || 3)}
+                                    className="bg-black/60 border border-yellow-500/50 rounded-md w-16 px-2 py-1 text-white text-center font-bold focus:border-yellow-400 outline-none"
+                                />
+                            </div>
+                        )}
+
+                        <button
+                            onClick={() => onStartGame(players, gameMode, cupTargetMatch)}
+                            className="bg-green-500 text-black shadow-[0_4px_20px_rgba(0,255,0,0.3)] border border-green-400 hover:bg-green-400 px-6 sm:px-8 py-2 md:py-3 rounded-xl w-full font-black tracking-widest text-base sm:text-lg md:text-xl hover:scale-[1.02] transform transition-transform flex items-center justify-center gap-2 shrink-0"
+                        >
+                            START GAME <span className="text-sm opacity-80 md:ml-1 font-bold bg-black/20 px-2 py-0.5 rounded-md text-green-100">({players.length})</span>
+                        </button>
+                    </div>
                 </div>
 
             </motion.div>

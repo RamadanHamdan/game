@@ -130,7 +130,7 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
                             </div>
 
                             <div className="flex gap-4">
-                                <div className="flex flex-col gap-2 flex-3">
+                                <div className="flex flex-col gap-2 flex-1">
                                     <label className="text-xs text-blue-300 font-bold uppercase tracking-widest ml-1">Kelas / Tingkat</label>
                                     <input
                                         type="text"
@@ -140,7 +140,7 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
                                         className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all placeholder:text-white/20 w-full"
                                     />
                                 </div>
-                                <div className="flex flex-col gap-2 flex-1 min-w-[100px]">
+                                <div className="flex flex-col gap-2 flex-1">
                                     <label className="text-xs text-blue-300 font-bold uppercase tracking-widest ml-1">Jml Soal</label>
                                     <input
                                         type="number"
@@ -152,25 +152,6 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
                                     />
                                 </div>
                             </div>
-
-                            <div className="flex flex-col gap-2">
-                                <label className="text-xs text-blue-300 font-bold uppercase tracking-widest ml-1">Format Soal</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {['multiple_choice', 'essay', 'both'].map((f) => (
-                                        <button
-                                            key={f}
-                                            onClick={() => setSettings(s => ({ ...s, format: f }))}
-                                            className={`py-2 px-1 rounded-lg text-[10px] font-bold uppercase transition-all border ${settings.format === f
-                                                ? 'bg-blue-600 border-blue-400 text-white shadow-lg'
-                                                : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'
-                                                }`}
-                                        >
-                                            {f === 'multiple_choice' ? 'Pilihan Ganda' : f === 'essay' ? 'Essay' : 'Keduanya'}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
                             <button
                                 onClick={handleGenerate}
                                 disabled={isGenerating || !settings.subject || (settings.subject === 'Lainnya...' && !settings.customSubject) || !settings.grade}

@@ -7,7 +7,7 @@ import PlayerCard from './PlayerCard';
 import Timer from './Timer';
 import Registration from './Registration';
 import AIGenerator from './AIGenerator';
-import { Crown, RefreshCw, Trophy, Upload, Volume2, VolumeX, Download, Pause, Play, Sparkles } from 'lucide-react';
+import { Crown, RefreshCw, Trophy, Upload, Volume2, VolumeX, Download, Pause, Play, Sparkles, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useRouter } from 'next/navigation';
 import { saveAsXLSX } from '../lib/ExcelUtils';
@@ -83,6 +83,9 @@ const GameContainer = () => {
     const [playerAnswers, setPlayerAnswers] = useState({});
     const [roundResults, setRoundResults] = useState({});
     const [gameHistory, setGameHistory] = useState([]);
+    const [gameMode, setGameMode] = useState('default');
+    const [cupTargetMatch, setCupTargetMatch] = useState(3);
+    const [currentCupMatch, setCurrentCupMatch] = useState(1);
 
     // Track finish order: [{ playerId: 1, rank: 1, score: 100 }, ...]
     const [finishedPlayers, setFinishedPlayers] = useState([]);
@@ -187,11 +190,15 @@ const GameContainer = () => {
             results[p.id] = answer ? (isCorrect ? 'correct' : 'wrong') : 'wrong';
             if (isCorrect) {
                 const newScore = p.score + 10;
+                let newGamePoints = p.gamePoints || 0;
                 if (newScore >= 100) {
                     const nextRank = currentFinished.length + 1;
+                    if (gameMode === 'cup') {
+                        newGamePoints += 10;
+                    }
                     currentFinished.push({ playerId: p.id, rank: nextRank, score: newScore });
                 }
-                return { ...p, score: newScore };
+                return { ...p, score: newScore, gamePoints: newGamePoints };
             }
             return p;
         });
@@ -238,7 +245,7 @@ const GameContainer = () => {
                 startRound(currentRound + 1, newPlayers);
             }
         }, 4000);
-    }, [gameState, finishedPlayers, players, playerQuestions, playerAnswers, currentRound, startRound]);
+    }, [gameState, finishedPlayers, players, playerQuestions, playerAnswers, currentRound, startRound, gameMode]);
 
     const submitAnswer = React.useCallback((playerId, answerInput) => {
         if (gameState !== 'playing') return;
@@ -288,12 +295,15 @@ const GameContainer = () => {
         };
     }, [loadDefaultQuestions]);
 
-    const handleRegistrationComplete = (newPlayers) => {
+    const handleRegistrationComplete = (newPlayers, selectedMode = 'default', targetMatch = 3) => {
         soundManager.init();
         soundManager.playClick();
         soundManager.startProceduralBGM();
 
-        const resetPlayers = newPlayers.map(p => ({ ...p, score: 0 }));
+        setGameMode(selectedMode);
+        setCupTargetMatch(targetMatch);
+        setCurrentCupMatch(1);
+        const resetPlayers = newPlayers.map(p => ({ ...p, score: 0, gamePoints: p.gamePoints || 0 }));
         setPlayers(resetPlayers);
         setGameState('playing');
         setGameHistory([]);
@@ -315,13 +325,24 @@ const GameContainer = () => {
                 const ws = wb.Sheets[wsname];
                 const data = XLSX.utils.sheet_to_json(ws);
 
-                // Basic validation/mapping
-                const formattedQuestions = data.map((row, idx) => ({
-                    id: idx + 1,
-                    question: row.Question || row.question,
-                    options: [row.OptionA || row.A, row.OptionB || row.B, row.OptionC || row.C, row.OptionD || row.D],
-                    answer: row.Answer || row.answer, // Should be the string value of the answer
-                })).filter(q => q.question && q.answer && q.options.every(o => o));
+                // Advanced parsing matching page.js
+                const formattedQuestions = data.map((row, index) => {
+                    const normalizeRow = {};
+                    Object.keys(row).forEach(key => normalizeRow[key.toLowerCase().trim()] = row[key]);
+
+                    return {
+                        id: index + 1,
+                        question: normalizeRow.question || row.Question || "Untitled Question",
+                        options: [
+                            normalizeRow.option1 || normalizeRow.optiona || row.OptionA || row.A || "",
+                            normalizeRow.option2 || normalizeRow.optionb || row.OptionB || row.B || "",
+                            normalizeRow.option3 || normalizeRow.optionc || row.OptionC || row.C || "",
+                            normalizeRow.option4 || normalizeRow.optiond || row.OptionD || row.D || ""
+                        ].filter(o => o !== ""),
+                        answer: (normalizeRow.answer || row.Answer || "").toString(),
+                        timeLimit: parseInt(normalizeRow.timelimit) || 10
+                    };
+                }).filter(q => q.question && q.options.length >= 2 && q.answer && q.answer !== "");
 
                 if (formattedQuestions.length > 0) {
                     setQuestions(formattedQuestions);
@@ -339,10 +360,18 @@ const GameContainer = () => {
     };
 
     const handleDownloadTemplate = async () => {
-        const template = [
-            { Question: "Example Question?", OptionA: "Answer 1", OptionB: "Answer 2", OptionC: "Answer 3", OptionD: "Answer 4", Answer: "Answer 1" }
+        const templateData = [
+            {
+                question: "Example Question?",
+                option1: "Answer 1",
+                option2: "Answer 2",
+                option3: "Answer 3",
+                option4: "Answer 4",
+                answer: "Answer 1",
+                timeLimit: 10
+            }
         ];
-        const ws = XLSX.utils.json_to_sheet(template);
+        const ws = XLSX.utils.json_to_sheet(templateData);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Template");
         await saveAsXLSX(wb, "quiz_template.xlsx");
@@ -450,6 +479,19 @@ const GameContainer = () => {
         setGameState('registration');
     };
 
+    const nextRound = () => {
+        setPlayerAnswers({});
+        setRoundResults({});
+        setPlayerQuestions({});
+        setCurrentRound(1);
+        setGameHistory([]);
+        setFinishedPlayers([]);
+        setQuestions([]); // Clear current questions
+        setCurrentCupMatch(prev => prev + 1);
+        setGameState('registration');
+        setTimeout(() => setShowAIGenerator(true), 500); // Auto-open the generator slightly after transition
+    };
+
     const fullReset = () => {
         soundManager.stopBGM();
         router.push('/');
@@ -464,6 +506,7 @@ const GameContainer = () => {
                 <Registration
                     onStartGame={handleRegistrationComplete}
                     initialPlayers={players}
+                    initialGameMode={gameMode}
                     onUpload={handleFileUpload}
                     onDownloadTemplate={handleDownloadTemplate}
                     onOpenAIWizard={() => setShowAIGenerator(true)}
@@ -521,7 +564,7 @@ const GameContainer = () => {
             <header className="flex justify-between items-center glass-panel px-2 py-1 shrink-0 h-[40px] md:h-[50px] border-blue-500/30">
                 <div className="flex items-center gap-2">
                     <Crown className="text-yellow-400 w-5 h-5 md:w-6 md:h-6" fill="currentColor" />
-                    <h1 className="text-lg md:text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-purple-400" style={{ fontFamily: 'monospace' }}>
+                    <h1 className="text-lg md:text-xl font-bold bg-clip-text text-transparent bg-linear-to-r text-white" style={{ fontFamily: 'monospace' }}>
                         EduQuiz
                     </h1>
                 </div>
@@ -565,8 +608,9 @@ const GameContainer = () => {
                 </div>
 
                 <AnimatePresence mode='wait'>
-                    {gameState === 'playing' && (
+                    {gameState === 'playing' && !isPaused && (
                         <motion.div
+                            key="playing-banner"
                             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                             className="bg-white/10 px-3 py-0.5 rounded-full backdrop-blur-sm border border-white/10"
                         >
@@ -575,6 +619,7 @@ const GameContainer = () => {
                     )}
                     {gameState === 'playing' && isPaused && (
                         <motion.div
+                            key="paused-banner"
                             initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                             className="bg-yellow-500/20 px-4 py-1 rounded-full backdrop-blur-sm border border-yellow-500/50"
                         >
@@ -583,6 +628,7 @@ const GameContainer = () => {
                     )}
                     {gameState === 'reveal' && (
                         <motion.div
+                            key="reveal-banner"
                             initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                             className="bg-blue-500/20 px-3 py-0.5 rounded-full backdrop-blur-sm border border-blue-500/30"
                         >
@@ -623,42 +669,97 @@ const GameContainer = () => {
                             </motion.div>
                         )}
                     </AnimatePresence>
-                    {gameState === 'winner' ? (
-                        <motion.div
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className={`w-full h-full glass-panel p-4 md:p-8 flex flex-col items-center gap-4 text-center border-yellow-400 border-2 shadow-[0_0_100px_rgba(255,215,0,0.2)] overflow-y-auto`}
-                        >
-                            <Trophy size={40} className="text-yellow-400 animate-bounce md:w-[60px] md:h-[60px]" />
-                            <h1 className="text-2xl md:text-4xl font-bold text-yellow-300">LEADERBOARD</h1>
+                    {gameState === 'winner' ? (() => {
+                        const isCupOver = gameMode === 'cup' && currentCupMatch >= cupTargetMatch;
+                        const finalStandings = isCupOver
+                            ? [...getLeaderboard()].sort((a, b) => (b.gamePoints || 0) - (a.gamePoints || 0))
+                            : getLeaderboard();
+                        const cupChampion = isCupOver ? finalStandings[0] : null;
 
-                            <div className="w-full max-w-2xl flex flex-col gap-2 flex-1 overflow-y-auto min-h-0">
-                                {getLeaderboard().map((p, idx) => (
-                                    <div key={p.id} className="flex items-center gap-3 bg-white/10 p-2 md:p-4 rounded-xl border border-white/10 shrink-0">
-                                        <div className="text-xl md:text-3xl font-bold w-8 md:w-12 text-yellow-400">#{idx + 1}</div>
-                                        <div className="text-2xl md:text-4xl">{p.avatar}</div>
-                                        <div className="flex-1 text-left min-w-0">
-                                            <div className="font-bold text-base md:text-xl truncate">{p.name}</div>
-                                            <div className="text-xs md:text-sm opacity-60">{p.status === 'Finished' ? 'Finished!' : 'Completed'}</div>
+                        return (
+                            <motion.div
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className={`w-full h-full glass-panel p-4 md:p-8 flex flex-col items-center gap-4 text-center border-yellow-400 border-2 shadow-[0_0_100px_rgba(255,215,0,0.2)] overflow-y-auto`}
+                            >
+                                {isCupOver ? (
+                                    <div className="w-full flex flex-col items-center animate-in zoom-in duration-500 mb-4">
+                                        <h1 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-linear-to-b from-yellow-200 to-yellow-600 drop-shadow-lg mb-4 animate-pulse uppercase tracking-widest">
+                                            CUP CHAMPION
+                                        </h1>
+                                        <div className="relative group perspective-1000">
+                                            <div className="absolute inset-0 bg-yellow-400 rounded-full blur-2xl opacity-50 animate-pulse"></div>
+                                            <div className="w-24 h-24 md:w-32 md:h-32 text-5xl md:text-7xl bg-black/60 border-4 border-yellow-400 rounded-full flex items-center justify-center transform transition-transform group-hover:scale-110 shadow-[0_0_50px_rgba(255,215,0,0.8)] z-10 relative" style={{ backgroundColor: cupChampion.color + '40', borderColor: cupChampion.color }}>
+                                                {cupChampion.avatar}
+                                                <div className="absolute -top-4 -right-4 bg-yellow-400 text-black text-xl md:text-2xl font-black p-2 rounded-full rotate-12 shadow-lg">
+                                                    <Trophy size={24} className="md:w-8 md:h-8" />
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="text-lg md:text-2xl font-mono text-green-400 whitespace-nowrap">{p.score} pts</div>
+                                        <h2 className="text-3xl md:text-5xl font-black text-white mt-4 drop-shadow-md z-10">{cupChampion.name}</h2>
+                                        <div className="bg-yellow-500/20 border border-yellow-500/50 px-6 py-2 rounded-full mt-2 backdrop-blur-sm">
+                                            <span className="text-yellow-300 font-bold text-xl md:text-2xl">{cupChampion.gamePoints || 0} TOTAL CUP POINTS</span>
+                                        </div>
                                     </div>
-                                ))}
-                            </div>
+                                ) : (
+                                    <>
+                                        <Trophy size={40} className="text-yellow-400 animate-bounce md:w-[60px] md:h-[60px]" />
+                                        <h1 className="text-2xl md:text-4xl font-bold text-yellow-300">LEADERBOARD</h1>
+                                    </>
+                                )}
 
-                            <div className="flex gap-2 mt-4 flex-wrap justify-center shrink-0">
-                                <button onClick={handleDownloadResults} className="btn flex items-center gap-2 bg-green-500/20 hover:bg-green-500/40 border-green-500 text-sm py-2">
-                                    <Download size={16} /> <span className="hidden md:inline">Download Results</span>
-                                </button>
-                                <button onClick={resetGame} className="btn flex items-center gap-2 bg-yellow-400/20 hover:bg-yellow-400/40 border-yellow-400 text-sm py-2">
-                                    <RefreshCw size={16} /> Play Again
-                                </button>
-                                <button onClick={fullReset} className="btn flex items-center gap-2 bg-red-400/20 hover:bg-red-400/40 border-red-400 text-sm py-2">
-                                    <RefreshCw size={16} /> Exit
-                                </button>
-                            </div>
-                        </motion.div>
-                    ) : (
+                                <div className="w-full max-w-2xl flex flex-col gap-2 flex-1 overflow-y-auto min-h-0">
+                                    {isCupOver && finalStandings.length > 1 && (
+                                        <div className="text-sm md:text-base font-bold text-white/50 uppercase tracking-widest text-left mt-2 mb-1 border-b border-white/10 pb-1 w-full shrink-0">
+                                            FINAL STANDINGS
+                                        </div>
+                                    )}
+                                    {finalStandings.slice(isCupOver ? 1 : 0).map((p, idx) => (
+                                        <div key={p.id} className="flex items-center gap-3 bg-white/10 p-2 md:p-4 rounded-xl border border-white/10 shrink-0">
+                                            <div className="text-xl md:text-3xl font-bold w-8 md:w-12 text-yellow-400">
+                                                #{isCupOver ? idx + 2 : idx + 1}
+                                            </div>
+                                            <div className="text-2xl md:text-4xl">{p.avatar}</div>
+                                            <div className="flex-1 text-left min-w-0">
+                                                <div className="font-bold text-base md:text-xl truncate">{p.name}</div>
+                                                <div className="text-xs md:text-sm opacity-60">
+                                                    {isCupOver ? 'Runner Up' : p.status === 'Finished' ? 'Finished!' : 'Completed'}
+                                                    {gameMode === 'cup' && <span className="font-bold text-yellow-400"> • {p.gamePoints || 0} Cup Pts</span>}
+                                                </div>
+                                            </div>
+                                            <div className="text-lg md:text-2xl font-mono text-yellow-400 whitespace-nowrap">
+                                                {isCupOver ? `${p.gamePoints || 0} pts` : `${p.score} pts`}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="flex gap-2 mt-4 flex-wrap justify-center shrink-0">
+                                    <button onClick={handleDownloadResults} className="btn flex items-center gap-2 bg-green-500/20 hover:bg-green-500/40 border-green-500 text-sm py-2">
+                                        <Download size={16} /> <span className="hidden md:inline">Download Results</span>
+                                    </button>
+                                    {gameMode === 'cup' ? (
+                                        currentCupMatch < cupTargetMatch ? (
+                                            <button onClick={nextRound} className="btn flex items-center gap-2 bg-blue-500/20 hover:bg-blue-500/40 border-blue-500 text-sm py-2 px-6 font-bold shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                                                <Sparkles size={16} className="text-blue-300" /> Next Game(Match {currentCupMatch + 1}/{cupTargetMatch})
+                                            </button>
+                                        ) : (
+                                            <button onClick={resetGame} className="btn flex items-center gap-2 bg-yellow-400/20 hover:bg-yellow-400/40 border-yellow-400 text-sm py-2 px-6 font-bold shadow-[0_0_15px_rgba(255,215,0,0.5)]">
+                                                <Trophy size={16} className="text-yellow-300" /> Cup Over! Play Again?
+                                            </button>
+                                        )
+                                    ) : (
+                                        <button onClick={resetGame} className="btn flex items-center gap-2 bg-yellow-400/20 hover:bg-yellow-400/40 border-yellow-400 text-sm py-2">
+                                            <RefreshCw size={16} /> Play Again
+                                        </button>
+                                    )}
+                                    <button onClick={fullReset} className="btn flex items-center gap-2 bg-red-400/20 hover:bg-red-400/40 border-red-400 text-sm py-2">
+                                        <X size={16} /> Exit
+                                    </button>
+                                </div>
+                            </motion.div>
+                        );
+                    })() : (
                         <SortableContext
                             items={players.map(p => p.id)}
                             strategy={rectSortingStrategy}
@@ -676,6 +777,7 @@ const GameContainer = () => {
                                             player={p}
                                             question={playerQuestions[p.id]}
                                             hasAnswered={playerAnswers[p.id] !== undefined || isFinished}
+                                            playerAnswer={playerAnswers[p.id]}
                                             result={gameState === 'reveal' ? roundResults[p.id] : null}
                                             isWinner={p.score >= 100}
                                             onAnswer={(optIdx) => submitAnswer(p.id, optIdx)}
