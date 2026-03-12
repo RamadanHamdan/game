@@ -1,0 +1,13 @@
+{
+  "presets": [
+    ["next/babel", {
+      "preset-env": {
+        "targets": {
+          "android": "11",
+          "chrome": "83",
+          "edge": "80"
+        }
+      }
+    }]
+  ]
+}

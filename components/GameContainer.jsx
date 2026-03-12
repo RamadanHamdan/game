@@ -302,7 +302,7 @@ const GameContainer = () => {
 
         setGameMode(selectedMode);
         setCupTargetMatch(targetMatch);
-        setCurrentCupMatch(1);
+        // Do not reset currentCupMatch here so Cup Mode can persist across matches
         const resetPlayers = newPlayers.map(p => ({ ...p, score: 0, gamePoints: p.gamePoints || 0 }));
         setPlayers(resetPlayers);
         setGameState('playing');
@@ -476,6 +476,8 @@ const GameContainer = () => {
         setCurrentRound(1);
         setGameHistory([]);
         setFinishedPlayers([]);
+        setCurrentCupMatch(1); // Reset cup match and points when Play Again is clicked
+        setPlayers(prev => prev.map(p => ({ ...p, score: 0, gamePoints: 0 })));
         setGameState('registration');
     };
 

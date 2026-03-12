@@ -30,6 +30,19 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.onerror = function(msg, url, lineNo, columnNo, error) {
+                alert('JS Error: ' + msg + '\\nLine: ' + lineNo + '\\nURL: ' + url);
+                return false;
+              };
+              window.addEventListener('unhandledrejection', function(event) {
+                alert('Promise Error: ' + (event.reason && event.reason.message ? event.reason.message : event.reason));
+              });
+            `
+          }}
+        />
         {children}
       </body>
     </html>

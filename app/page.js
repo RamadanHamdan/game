@@ -101,8 +101,6 @@ export default function Home() {
       </div>
 
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
         className="z-10 flex flex-col items-center gap-6 bg-[#35A8BA] p-12 md:p-16 rounded-3xl shadow-lg max-w-2xl w-full mx-4"
       >
         <div className="bg-yellow-50 p-4 rounded-full mb-2">

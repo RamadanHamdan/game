@@ -92,7 +92,7 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                                 initial={{ opacity: 0, scale: 0.8, x: -20 }}
                                 animate={{ opacity: 1, scale: 1, x: 0 }}
                                 exit={{ opacity: 0, scale: 0.8 }}
-                                className="bg-black/40 p-2 sm:p-3 rounded-xl border border-blue-500/30 flex flex-col items-center gap-1 sm:gap-2 shrink-0 w-[130px] sm:w-[150px] md:w-[160px] h-[210px] sm:h-[220px] md:h-[240px] relative group hover:border-blue-400 transition-colors shadow-xl"
+                                className="bg-black/40 p-2 sm:p-3 rounded-xl border border-blue-500/30 flex flex-col items-center gap-1 xl:gap-2 shrink-0 w-[130px] sm:w-[150px] md:w-[160px] h-[210px] sm:h-[220px] md:h-[240px] relative group hover:border-blue-400 transition-colors shadow-xl mr-3 sm:mr-4 md:mr-5"
                             >
                                 <div className="absolute top-1 sm:top-2 right-1 sm:right-2 z-10">
                                     <button
@@ -139,7 +139,7 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                     <motion.button
                         layout
                         onClick={addPlayer}
-                        className="w-[80px] sm:w-[100px] h-[210px] sm:h-[220px] md:h-[240px] shrink-0 border-2 border-dashed border-white/20 hover:border-blue-500/50 hover:bg-blue-500/10 rounded-xl flex flex-col items-center justify-center gap-2 text-white/40 hover:text-blue-200 transition group"
+                        className="w-[80px] sm:w-[100px] h-[210px] sm:h-[220px] md:h-[240px] shrink-0 border-2 border-dashed border-white/20 hover:border-blue-500/50 hover:bg-blue-500/10 rounded-xl flex flex-col items-center justify-center gap-2 text-white/40 hover:text-blue-200 transition group mr-3 sm:mr-4 md:mr-5"
                     >
                         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-current flex items-center justify-center group-hover:scale-110 transition bg-white/5">
                             <Plus size={20} className="sm:w-[24px] sm:h-[24px]" />
