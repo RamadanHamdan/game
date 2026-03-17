@@ -163,6 +163,9 @@ const GameContainer = () => {
         let currentFinished = [...finishedPlayers];
         let anyCorrect = false;
 
+        const maxRounds = questions.length > 0 ? questions.length : 10;
+        const scoreIncrement = 100 / maxRounds;
+
         const newPlayers = players.map(p => {
             if (currentFinished.some(fp => fp.playerId === p.id)) return p;
             const myQuestion = playerQuestions[p.id];
@@ -189,9 +192,9 @@ const GameContainer = () => {
             }]);
             results[p.id] = answer ? (isCorrect ? 'correct' : 'wrong') : 'wrong';
             if (isCorrect) {
-                const newScore = p.score + 10;
+                const newScore = p.score + scoreIncrement;
                 let newGamePoints = p.gamePoints || 0;
-                if (newScore >= 100) {
+                if (newScore >= 99.99) {
                     const nextRank = currentFinished.length + 1;
                     if (gameMode === 'cup') {
                         newGamePoints += 10;
@@ -235,7 +238,7 @@ const GameContainer = () => {
         setPlayerAnswers({});
 
         const anyFinished = newPlayers.some(p => finalFinishedPlayers.some(fp => fp.playerId === p.id));
-        const isMaxRounds = currentRound >= 50;
+        const isMaxRounds = currentRound >= maxRounds;
 
         setTimeout(() => {
             if (anyFinished || isMaxRounds) {
@@ -244,15 +247,15 @@ const GameContainer = () => {
             } else {
                 startRound(currentRound + 1, newPlayers);
             }
-        }, 4000);
-    }, [gameState, finishedPlayers, players, playerQuestions, playerAnswers, currentRound, startRound, gameMode]);
+        }, 1000);
+    }, [gameState, finishedPlayers, players, playerQuestions, playerAnswers, currentRound, startRound, gameMode, questions.length]);
 
     const submitAnswer = React.useCallback((playerId, answerInput) => {
         if (gameState !== 'playing') return;
         if (isPaused) return;
         if (playerAnswers[playerId] !== undefined) return;
         if (finishedPlayers.some(fp => fp.playerId === playerId)) return;
-
+f
         const myQuestion = playerQuestions[playerId];
         if (!myQuestion) return;
 
@@ -405,7 +408,7 @@ const GameContainer = () => {
     const getLeaderboard = () => {
         const finishers = [...finishedPlayers].sort((a, b) => a.rank - b.rank);
         const finisherIds = new Set(finishers.map(f => f.playerId));
-        const active = players.filter(p => !finisherIds.has(p.id));
+        const active = players.filter(p => !finisherIds.has(p.id)).sort((a, b) => b.score - a.score);
         const leaderboard = [];
         finishers.forEach(f => {
             const p = players.find(pl => pl.id === f.playerId);
@@ -603,7 +606,7 @@ const GameContainer = () => {
                 <div className="w-full max-w-2xl transform scale-75 origin-top">
                     <Timer
                         key={currentRound}
-                        duration={10}
+                        duration={Object.values(playerQuestions).length > 0 ? Math.max(...Object.values(playerQuestions).map(q => q.timeLimit || 10)) : 10}
                         onTimeUp={handleRoundEnd}
                         isRunning={gameState === 'playing' && !isPaused}
                     />

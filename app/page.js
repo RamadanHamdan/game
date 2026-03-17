@@ -21,7 +21,7 @@ export default function Home() {
         option3: "Option C",
         option4: "Option D",
         answer: "Option A",
-        timeLimit: 10
+        timeLimit: 5
       }
     ];
     const ws = XLSX.utils.json_to_sheet(templateData);
@@ -61,7 +61,7 @@ export default function Home() {
               normalizeRow.option4 || ""
             ].filter(o => o !== ""),
             answer: normalizeRow.answer || "",
-            timeLimit: parseInt(normalizeRow.timelimit) || 10
+            timeLimit: parseInt(normalizeRow.timelimit) || 5
           };
         }).filter(q => q.question && q.options.length >= 2 && q.answer);
 

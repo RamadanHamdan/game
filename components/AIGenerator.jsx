@@ -10,7 +10,8 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
         customSubject: '', // For manual input if they choose 'Lainnya'
         grade: '9', // Default to grade 9
         format: 'multiple_choice',
-        count: 5
+        count: 5,
+        timeLimit: 10
     });
 
     // Core Subject Options
@@ -56,7 +57,11 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
             );
 
             if (newQuestions && newQuestions.length > 0) {
-                onQuestionsGenerated(newQuestions);
+                const questionsWithTimeLimit = newQuestions.map(q => ({
+                    ...q,
+                    timeLimit: parseInt(settings.timeLimit) || 10
+                }));
+                onQuestionsGenerated(questionsWithTimeLimit);
                 onClose();
             }
         } catch (err) {
@@ -129,15 +134,27 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
                                 </AnimatePresence>
                             </div>
 
+                            <div className="flex flex-col gap-2">
+                                <label className="text-xs text-blue-300 font-bold uppercase tracking-widest ml-1">Kelas / Tingkat</label>
+                                <input
+                                    type="text"
+                                    value={settings.grade}
+                                    onChange={(e) => setSettings(s => ({ ...s, grade: e.target.value }))}
+                                    placeholder="Cth: 9, 12 IPA, Kuliah Semester 2..."
+                                    className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all placeholder:text-white/20 w-full"
+                                />
+                            </div>
+
                             <div className="flex gap-4">
                                 <div className="flex flex-col gap-2 flex-1">
-                                    <label className="text-xs text-blue-300 font-bold uppercase tracking-widest ml-1">Kelas / Tingkat</label>
+                                    <label className="text-xs text-blue-300 font-bold uppercase tracking-widest ml-1">Waktu (Detik)</label>
                                     <input
-                                        type="text"
-                                        value={settings.grade}
-                                        onChange={(e) => setSettings(s => ({ ...s, grade: e.target.value }))}
-                                        placeholder="Cth: 9, 12 IPA, Kuliah Semester 2..."
-                                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all placeholder:text-white/20 w-full"
+                                        type="number"
+                                        min="5"
+                                        max="120"
+                                        value={settings.timeLimit}
+                                        onChange={(e) => setSettings(s => ({ ...s, timeLimit: parseInt(e.target.value) || 10 }))}
+                                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all w-full text-center"
                                     />
                                 </div>
                                 <div className="flex flex-col gap-2 flex-1">
