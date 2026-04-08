@@ -2,8 +2,10 @@
 const nextConfig = {
   output: 'export',
   trailingSlash: true,
-  // IMPORTANT: Capacitor requires relative paths for assets to resolve file:// URLs
-  assetPrefix: './',
+  // NOTE: assetPrefix './' was previously used for file:// protocol in Capacitor.
+  // Since androidScheme is set to 'http', Capacitor uses http://localhost — 
+  // absolute paths like /_next/... resolve correctly from any sub-route.
+  // No assetPrefix needed.
   images: {
     unoptimized: true,
   },

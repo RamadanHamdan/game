@@ -255,7 +255,7 @@ const GameContainer = () => {
         if (isPaused) return;
         if (playerAnswers[playerId] !== undefined) return;
         if (finishedPlayers.some(fp => fp.playerId === playerId)) return;
-f
+
         const myQuestion = playerQuestions[playerId];
         if (!myQuestion) return;
 
