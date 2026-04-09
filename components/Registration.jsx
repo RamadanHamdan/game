@@ -1,21 +1,27 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Plus, StepBackIcon, X, Upload, Download, RefreshCw, Sparkles, Trophy } from 'lucide-react';
+import { Trash2, Plus, StepBackIcon, X, Upload, Download, RefreshCw, Sparkles, Trophy, Lock, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { generateAIQuestions } from '../lib/ai';
 
 const AVATARS = ["🦁", "🦊", "🐼", "🐸", "🐯", "🐨", "🦄", "🐲", "🤖", "👽", "👻", "🤡", "💀", "💩", "🐔", "🦄"];
 const COLORS = ["#FF6B6B", "#4ECDC4", "#FFE66D", "#1A535C", "#FF9F1C", "#2EC4B6", "#E71D36", "#7209B7"];
 
-const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplate, onOpenAIWizard, initialGameMode = 'default' }) => {
+const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplate, onOpenAIWizard, initialGameMode = 'default', isLicensed = false }) => {
     const router = useRouter();
-    const [players, setPlayers] = useState(initialPlayers && initialPlayers.length > 0 ? initialPlayers : [
-        { id: 1, name: "Player 1", avatar: "🦁", color: "#FF6B6B" },
-        { id: 2, name: "Player 2", avatar: "🦊", color: "#4ECDC4" },
-    ]);
+    const MAX_PLAYERS_FREE = 1;
+
+    const getInitialPlayers = () => {
+        const base = initialPlayers && initialPlayers.length > 0 ? initialPlayers : [
+            { id: 1, name: "Player 1", avatar: "🦁", color: "#FF6B6B" },
+            { id: 2, name: "Player 2", avatar: "🦊", color: "#4ECDC4" },
+        ];
+        // Jika tidak berlisensi, batasi ke 1 player saja
+        return isLicensed ? base : base.slice(0, MAX_PLAYERS_FREE);
+    };
+    const [players, setPlayers] = useState(getInitialPlayers);
     const [gameMode, setGameMode] = useState(initialGameMode);
     const [cupTargetMatch, setCupTargetMatch] = useState(3);
-
 
     // Modal state for avatar selection
     const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -40,7 +46,9 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
 
     const addPlayer = () => {
         setPlayers(prev => {
-            if (prev.length >= 6) return prev;
+            // Batasi max player jika tidak berlisensi
+            const maxPlayers = isLicensed ? 6 : MAX_PLAYERS_FREE;
+            if (prev.length >= maxPlayers) return prev;
             const newId = prev.length > 0 ? Math.max(...prev.map(p => p.id)) + 1 : 1;
             const randomAvatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
             const randomColor = COLORS[Math.floor(Math.random() * COLORS.length)];
@@ -79,7 +87,18 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white text-center flex-1 mx-2 tracking-wide font-mono">
                         PLAYER REGISTRATION
                     </h2>
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0"></div> {/* Spacer for perfect centering */}
+                    {/* Badge FREE / LICENSED */}
+                    {isLicensed ? (
+                        <div className="flex items-center gap-1.5 bg-green-500/10 border border-green-500/30 px-2.5 py-1 rounded-full shrink-0">
+                            <ShieldCheck size={13} className="text-green-400" />
+                            <span className="text-[10px] font-bold text-green-300 uppercase tracking-widest">Licensed</span>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/30 px-2.5 py-1 rounded-full shrink-0" title="Upgrade ke lisensi penuh untuk membuka semua fitur">
+                            <Lock size={13} className="text-orange-400" />
+                            <span className="text-[10px] font-bold text-orange-300 uppercase tracking-widest">Free</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Horizontal Scrolling Container */}
@@ -135,17 +154,37 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                         ))}
                     </AnimatePresence>
 
-                    {/* Add Player Button */}
-                    <motion.button
-                        layout
-                        onClick={addPlayer}
-                        className="w-[80px] sm:w-[100px] h-[210px] sm:h-[220px] md:h-[240px] shrink-0 border-2 border-dashed border-white/20 hover:border-blue-500/50 hover:bg-blue-500/10 rounded-xl flex flex-col items-center justify-center gap-2 text-white/40 hover:text-blue-200 transition group mr-3 sm:mr-4 md:mr-5"
-                    >
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-current flex items-center justify-center group-hover:scale-110 transition bg-white/5">
-                            <Plus size={20} className="sm:w-[24px] sm:h-[24px]" />
-                        </div>
-                        <span className="font-bold text-xs sm:text-sm">ADD</span>
-                    </motion.button>
+                    {/* Add Player Button — disabled jika sudah mencapai max & unlicensed */}
+                    {(() => {
+                        const maxPlayers = isLicensed ? 6 : MAX_PLAYERS_FREE;
+                        const atMax = players.length >= maxPlayers;
+                        return (
+                            <div className="relative group/add">
+                                <motion.button
+                                    layout
+                                    onClick={addPlayer}
+                                    disabled={atMax}
+                                    className={`w-[80px] sm:w-[100px] h-[210px] sm:h-[220px] md:h-[240px] shrink-0 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 transition mr-3 sm:mr-4 md:mr-5
+                                        ${atMax
+                                            ? 'border-white/10 text-white/20 cursor-not-allowed'
+                                            : 'border-white/20 hover:border-blue-500/50 hover:bg-blue-500/10 text-white/40 hover:text-blue-200 cursor-pointer group'
+                                        }`
+                                    }
+                                >
+                                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-current flex items-center justify-center transition bg-white/5 ${!atMax && 'group-hover:scale-110'}`}>
+                                        {atMax && !isLicensed ? <Lock size={20} className="sm:w-[24px] sm:h-[24px]" /> : <Plus size={20} className="sm:w-[24px] sm:h-[24px]" />}
+                                    </div>
+                                    <span className="font-bold text-xs sm:text-sm">{atMax && !isLicensed ? 'LOCKED' : 'ADD'}</span>
+                                </motion.button>
+                                {/* Tooltip lisensi diperlukan */}
+                                {atMax && !isLicensed && (
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 bg-black/90 border border-orange-500/40 text-orange-300 text-[10px] text-center px-2 py-1.5 rounded-lg opacity-0 group-hover/add:opacity-100 transition-opacity pointer-events-none z-10">
+                                        🔒 Butuh lisensi untuk menambah lebih dari {MAX_PLAYERS_FREE} player
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
                 </div>
 
                 <div className="mt-auto flex flex-col xl:flex-row items-center justify-between gap-3 md:gap-4 shrink-0 pt-3 md:pt-4 border-t border-white/20 w-full px-2 md:px-4">
@@ -168,13 +207,28 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                             <Download size={16} />
                             <span>Template</span>
                         </button>
-                        <button
-                            onClick={onOpenAIWizard}
-                            className="flex items-center justify-center gap-2 cursor-pointer bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-200 px-3 py-2 md:py-3 rounded-xl border border-yellow-500/30 transition-colors text-xs sm:text-sm font-semibold w-full sm:w-auto"
-                        >
-                            <Sparkles size={16} className="text-yellow-400" />
-                            <span>GENERATE WITH AI</span>
-                        </button>
+
+                        {/* AI Generate — hanya untuk licensed */}
+                        {isLicensed ? (
+                            <button
+                                onClick={onOpenAIWizard}
+                                className="flex items-center justify-center gap-2 cursor-pointer bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-200 px-3 py-2 md:py-3 rounded-xl border border-yellow-500/30 transition-colors text-xs sm:text-sm font-semibold w-full sm:w-auto"
+                            >
+                                <Sparkles size={16} className="text-yellow-400" />
+                                <span>GENERATE WITH AI</span>
+                            </button>
+                        ) : (
+                            <div
+                                className="relative group/ai flex items-center justify-center gap-2 bg-white/5 text-white/30 px-3 py-2 md:py-3 rounded-xl border border-white/10 text-xs sm:text-sm font-semibold w-full sm:w-auto cursor-not-allowed select-none"
+                                title="Butuh lisensi penuh"
+                            >
+                                <Lock size={16} className="text-white/30" />
+                                <span>GENERATE WITH AI</span>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 bg-black/90 border border-orange-500/40 text-orange-300 text-[10px] text-center px-2 py-1.5 rounded-lg opacity-0 group-hover/ai:opacity-100 transition-opacity pointer-events-none z-10">
+                                    🔒 Fitur Generate AI memerlukan lisensi aktif
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Primary Start Action */}
@@ -187,13 +241,28 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                             >
                                 Default Mode
                             </button>
-                            <button
-                                onClick={() => setGameMode('cup')}
-                                className={`flex-1 py-1 px-4 text-xs sm:text-sm font-bold rounded-md transition-all gap-1 flex items-center justify-center ${gameMode === 'cup' ? 'bg-yellow-500 text-black shadow-md' : 'text-white/50 hover:text-white/80 hover:bg-white/10'}`}
-                            >
-                                <Trophy size={14} className={gameMode === 'cup' ? 'text-black' : 'text-yellow-500/50'} />
-                                Cup Mode
-                            </button>
+
+                            {/* Cup Mode — hanya untuk licensed */}
+                            {isLicensed ? (
+                                <button
+                                    onClick={() => setGameMode('cup')}
+                                    className={`flex-1 py-1 px-4 text-xs sm:text-sm font-bold rounded-md transition-all gap-1 flex items-center justify-center ${gameMode === 'cup' ? 'bg-yellow-500 text-black shadow-md' : 'text-white/50 hover:text-white/80 hover:bg-white/10'}`}
+                                >
+                                    <Trophy size={14} className={gameMode === 'cup' ? 'text-black' : 'text-yellow-500/50'} />
+                                    Cup Mode
+                                </button>
+                            ) : (
+                                <div
+                                    className="relative group/cup flex-1 py-1 px-4 text-xs sm:text-sm font-bold rounded-md flex items-center justify-center gap-1 text-white/20 cursor-not-allowed select-none"
+                                    title="Cup Mode memerlukan lisensi"
+                                >
+                                    <Lock size={12} className="text-white/20" />
+                                    Cup Mode
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-black/90 border border-orange-500/40 text-orange-300 text-[10px] text-center px-2 py-1.5 rounded-lg opacity-0 group-hover/cup:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap">
+                                        🔒 Cup Mode memerlukan lisensi aktif
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Cup Settings */}

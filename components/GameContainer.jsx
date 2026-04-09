@@ -73,7 +73,7 @@ const SortablePlayerCard = (props) => {
 };
 
 
-const GameContainer = () => {
+const GameContainer = ({ isLicensed = false }) => {
     const router = useRouter();
     const [questions, setQuestions] = useState([]);
     const [players, setPlayers] = useState(INITIAL_PLAYERS);
@@ -515,16 +515,19 @@ const GameContainer = () => {
                     onUpload={handleFileUpload}
                     onDownloadTemplate={handleDownloadTemplate}
                     onOpenAIWizard={() => setShowAIGenerator(true)}
+                    isLicensed={isLicensed}
                 />
-                <AIGenerator
-                    isOpen={showAIGenerator}
-                    onClose={() => setShowAIGenerator(false)}
-                    onQuestionsGenerated={(newQuestions) => {
-                        setQuestions(newQuestions);
-                        sessionStorage.setItem('quizQuestions', JSON.stringify(newQuestions));
-                        alert(`Berhasil menciptakan ${newQuestions.length} soal!`);
-                    }}
-                />
+                {isLicensed && (
+                    <AIGenerator
+                        isOpen={showAIGenerator}
+                        onClose={() => setShowAIGenerator(false)}
+                        onQuestionsGenerated={(newQuestions) => {
+                            setQuestions(newQuestions);
+                            sessionStorage.setItem('quizQuestions', JSON.stringify(newQuestions));
+                            alert(`Berhasil menciptakan ${newQuestions.length} soal!`);
+                        }}
+                    />
+                )}
             </>
         );
     }

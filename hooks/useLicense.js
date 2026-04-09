@@ -17,11 +17,26 @@ const DEV_BYPASS = process.env.NEXT_PUBLIC_LICENSE_DEV_BYPASS === 'true';
 
 /**
  * Deteksi apakah berjalan di dalam Capacitor (Android/iOS)
- * Capacitor inject window.Capacitor object
+ *
+ * PENTING: capacitor.config.ts menggunakan androidScheme: 'http',
+ * sehingga di Android URL adalah http://localhost — BUKAN capacitor:// atau file://
+ * Gunakan window.Capacitor.isNativePlatform() sebagai deteksi utama.
  */
 function isCapacitorApp() {
-    return typeof window !== 'undefined' && 
-        (window.Capacitor !== undefined || window.location.protocol === 'file:' || window.location.hostname === 'localhost' && window.__capacitor);
+    // 1. Env flag eksplisit — paling reliable, set NEXT_PUBLIC_IS_CAPACITOR=true saat build
+    if (process.env.NEXT_PUBLIC_IS_CAPACITOR === 'true') return true;
+
+    if (typeof window === 'undefined') return false;
+
+    // 2. Capacitor official API — bekerja di semua versi & semua androidScheme
+    if (typeof window.Capacitor !== 'undefined' && typeof window.Capacitor.isNativePlatform === 'function') {
+        return window.Capacitor.isNativePlatform();
+    }
+
+    // 3. Fallback untuk Capacitor versi lama / androidScheme non-http
+    return window.location.protocol === 'capacitor:'
+        || window.location.protocol === 'file:'
+        || window.__capacitor === true;
 }
 
 // ── Verify token secara lokal (client-side JWT verify) ──────────────────────
@@ -114,21 +129,12 @@ export function useLicense() {
 
         try {
             const fingerprint = getBrowserFingerprint();
-            let data;
 
-            if (isCapacitorApp()) {
-                // Android: langsung ke Supabase, tanpa API route
-                const { activateLicenseDirect } = await import('@/lib/licenseClientDirect');
-                data = await activateLicenseDirect(rawKey, fingerprint);
-            } else {
-                // Web: via API route
-                const res = await fetch('/api/license/activate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ key: rawKey.replace(/-/g, ''), fingerprint }),
-                });
-                data = await res.json();
-            }
+            // Selalu gunakan licenseClientDirect (Supabase langsung)
+            // Bekerja di semua platform: web, Android, iOS
+            // Tidak bergantung pada API routes Next.js yang tidak ada di static export
+            const { activateLicenseDirect } = await import('@/lib/licenseClientDirect');
+            const data = await activateLicenseDirect(rawKey, fingerprint);
 
             if (data.success) {
                 saveToken(data.token, data.school);
@@ -141,7 +147,15 @@ export function useLicense() {
             }
         } catch (e) {
             console.error('[License] activateLicense error:', e);
-            const msg = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+            // Tampilkan error asli untuk debug — jangan hidden dengan pesan generic
+            let msg;
+            if (e.message?.includes('SUPABASE') || e.message?.includes('belum diisi')) {
+                msg = 'Konfigurasi server belum lengkap. Hubungi administrator.';
+            } else if (e.message?.includes('fetch') || e.message?.includes('network') || e.message?.includes('Network')) {
+                msg = `Koneksi gagal: ${e.message}`;
+            } else {
+                msg = e.message || 'Error tidak diketahui';
+            }
             setError(msg);
             return { success: false, error: msg };
         } finally {

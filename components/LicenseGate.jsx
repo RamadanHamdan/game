@@ -8,7 +8,7 @@ import { ShieldCheck, Key, Loader2, AlertCircle, CheckCircle2, Lock, BookOpen } 
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'EduQuiz';
 
-export default function LicenseGate({ onActivate, isActivating, error, formatKey }) {
+export default function LicenseGate({ onActivate, isActivating, error, formatKey, compact = false }) {
     const [inputKey, setInputKey] = useState('');
     const [localError, setLocalError] = useState('');
 
@@ -30,6 +30,105 @@ export default function LicenseGate({ onActivate, isActivating, error, formatKey
 
     const displayError = localError || error;
 
+    // Mode compact: hanya render card (tanpa full-screen wrapper & background)
+    // Digunakan saat embed di dalam play/page.js bersama tombol lain
+    if (compact) {
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+                className="w-full"
+            >
+                <div className="rounded-2xl border border-white/10 overflow-hidden shadow-2xl"
+                    style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)' }}
+                >
+                    {/* Compact header */}
+                    <div className="bg-gradient-to-r from-blue-600/30 to-purple-600/30 border-b border-white/10 p-4 flex flex-col items-center gap-2">
+                        <motion.div
+                            animate={{ rotate: [0, -5, 5, -5, 0] }}
+                            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                            className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30"
+                        >
+                            <ShieldCheck size={24} className="text-white" />
+                        </motion.div>
+                        <div className="text-center">
+                            <div className="flex items-center gap-1.5 justify-center mb-0.5">
+                                <BookOpen size={13} className="text-blue-300" />
+                                <span className="text-blue-300 text-xs font-semibold tracking-widest uppercase">{APP_NAME}</span>
+                            </div>
+                            <h1 className="text-lg font-black text-white">Aktivasi Lisensi</h1>
+                        </div>
+                    </div>
+
+                    {/* Compact form */}
+                    <form onSubmit={handleSubmit} className="p-4 flex flex-col gap-3">
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-bold text-white/60 uppercase tracking-widest flex items-center gap-1.5">
+                                <Key size={12} /> Kode Lisensi
+                            </label>
+                            <div className="relative">
+                                <input
+                                    id="license-key-input-compact"
+                                    type="text"
+                                    value={inputKey}
+                                    onChange={handleKeyChange}
+                                    placeholder="XXXX-XXXX-XXXX-XXXX"
+                                    maxLength={19}
+                                    autoComplete="off"
+                                    disabled={isActivating}
+                                    className={`w-full bg-black/40 border rounded-xl px-4 py-3 text-white text-center text-lg font-mono tracking-[0.3em] outline-none transition-all placeholder:text-white/20 placeholder:tracking-normal placeholder:text-sm
+                                        ${displayError ? 'border-red-500/60' : 'border-white/10 focus:border-blue-500/60'}
+                                        ${isActivating ? 'opacity-50 cursor-not-allowed' : ''}
+                                    `}
+                                />
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20">
+                                    <Lock size={14} />
+                                </div>
+                            </div>
+                            <div className="flex justify-between px-1">
+                                <span className="text-[10px] text-white/30">{inputKey.replace(/-/g, '').length}/16 karakter</span>
+                                <span className="text-[10px] text-white/30">Format: XXXX-XXXX-XXXX-XXXX</span>
+                            </div>
+                        </div>
+
+                        <AnimatePresence>
+                            {displayError && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0 }}
+                                    className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-2.5"
+                                >
+                                    <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
+                                    <p className="text-red-300 text-xs leading-relaxed">{displayError}</p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        <button
+                            id="license-activate-btn-compact"
+                            type="submit"
+                            disabled={isActivating || inputKey.replace(/-/g, '').length < 16}
+                            className="w-full py-3 rounded-xl font-bold text-sm tracking-wide transition-all flex items-center justify-center gap-2
+                                bg-gradient-to-r from-blue-600 to-purple-600 text-white
+                                hover:from-blue-500 hover:to-purple-500
+                                disabled:opacity-40 disabled:cursor-not-allowed
+                                active:scale-[0.98]"
+                        >
+                            {isActivating ? (
+                                <><Loader2 size={16} className="animate-spin" /> Memverifikasi...</>
+                            ) : (
+                                <><CheckCircle2 size={16} /> Aktifkan Lisensi</>
+                            )}
+                        </button>
+                    </form>
+                </div>
+            </motion.div>
+        );
+    }
+
+    // Mode normal: full screen dengan background
     return (
         <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden"
             style={{ background: 'linear-gradient(135deg, #0a0a1a 0%, #0d1b2e 50%, #0a0a1a 100%)' }}

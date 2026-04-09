@@ -33,6 +33,13 @@ export default function RootLayout({ children }) {
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              // Polyfill structuredClone untuk Android WebView lama (sebelum Chrome 98)
+              if (typeof structuredClone === 'undefined') {
+                globalThis.structuredClone = function(obj) {
+                  if (obj === undefined) return undefined;
+                  return JSON.parse(JSON.stringify(obj));
+                };
+              }
               window.onerror = function(msg, url, lineNo, columnNo, error) {
                 alert('JS Error: ' + msg + '\\nLine: ' + lineNo + '\\nURL: ' + url);
                 return false;
