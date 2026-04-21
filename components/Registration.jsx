@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, Plus, StepBackIcon, X, Upload, Download, RefreshCw, Sparkles, Trophy, Lock, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -9,7 +9,8 @@ const COLORS = ["#FF6B6B", "#4ECDC4", "#FFE66D", "#1A535C", "#FF9F1C", "#2EC4B6"
 
 const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplate, onOpenAIWizard, initialGameMode = 'default', isLicensed = false }) => {
     const router = useRouter();
-    const MAX_PLAYERS_FREE = 1;
+    const MAX_PLAYERS_FREE = 2;
+    const MAX_DATE_FREE = 7;
 
     const getInitialPlayers = () => {
         const base = initialPlayers && initialPlayers.length > 0 ? initialPlayers : [
@@ -17,11 +18,13 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
             { id: 2, name: "Player 2", avatar: "🦊", color: "#4ECDC4" },
         ];
         // Jika tidak berlisensi, batasi ke 1 player saja
-        return isLicensed ? base : base.slice(0, MAX_PLAYERS_FREE);
+        return isLicensed ? base : base.slice(0, MAX_PLAYERS_FREE, MAX_DATE_FREE);
     };
     const [players, setPlayers] = useState(getInitialPlayers);
     const [gameMode, setGameMode] = useState(initialGameMode);
     const [cupTargetMatch, setCupTargetMatch] = useState(3);
+    const [timeLeft, setTimeLeft] = useState("");
+    const [isExpired, setIsExpired] = useState(false);
 
     // Modal state for avatar selection
     const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -47,7 +50,7 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
     const addPlayer = () => {
         setPlayers(prev => {
             // Batasi max player jika tidak berlisensi
-            const maxPlayers = isLicensed ? 6 : MAX_PLAYERS_FREE;
+            const maxPlayers = isLicensed ? 4 : MAX_PLAYERS_FREE;
             if (prev.length >= maxPlayers) return prev;
             const newId = prev.length > 0 ? Math.max(...prev.map(p => p.id)) + 1 : 1;
             const randomAvatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
@@ -68,6 +71,45 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
             return prev.filter(p => p.id !== id);
         });
     };
+
+    useEffect(() => {
+        if (!isLicensed) {
+            const FREE_TRIAL_KEY = 'edu_free_trial_start';
+            const storedDate = localStorage.getItem(FREE_TRIAL_KEY);
+            let startDate;
+            
+            if (!storedDate) {
+                startDate = new Date().getTime();
+                localStorage.setItem(FREE_TRIAL_KEY, startDate.toString());
+            } else {
+                startDate = parseInt(storedDate, 10);
+            }
+            
+            const maxMs = MAX_DATE_FREE * 24 * 60 * 60 * 1000;
+
+            const updateTimer = () => {
+                const msPassed = new Date().getTime() - startDate;
+                const remainingMs = maxMs - msPassed;
+                
+                if (remainingMs <= 0) {
+                    setIsExpired(true);
+                    setTimeLeft("EXPIRED");
+                } else {
+                    const d = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
+                    const h = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const m = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+                    const s = Math.floor((remainingMs % (1000 * 60)) / 1000);
+                    
+                    setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
+                    setIsExpired(false);
+                }
+            };
+
+            updateTimer();
+            const intervalId = setInterval(updateTimer, 1000);
+            return () => clearInterval(intervalId);
+        }
+    }, [isLicensed]);
 
     return (
         <div className="w-full h-full sm:h-dvh flex flex-col items-center justify-center p-2 sm:p-4 text-white">
@@ -97,8 +139,14 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                         <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/30 px-2.5 py-1 rounded-full shrink-0" title="Upgrade ke lisensi penuh untuk membuka semua fitur">
                             <Lock size={13} className="text-orange-400" />
                             <span className="text-[10px] font-bold text-orange-300 uppercase tracking-widest">Free</span>
+                            <span className="text-[10px] font-bold text-orange-300 uppercase tracking-widest min-w-[70px] text-center">
+                                {isExpired ? 'EXPIRED' : timeLeft}
+                            </span>
                         </div>
                     )}
+                    <button className="text-[10px] font-bold text-orange-300 uppercase cursor-pointer tracking-widest min-w-[70px] text-center" onClick={() => router.push('/upgrade')}>
+                        Upgrade
+                    </button>
                 </div>
 
                 {/* Horizontal Scrolling Container */}
@@ -156,7 +204,7 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
 
                     {/* Add Player Button — disabled jika sudah mencapai max & unlicensed */}
                     {(() => {
-                        const maxPlayers = isLicensed ? 6 : MAX_PLAYERS_FREE;
+                        const maxPlayers = isLicensed ? 4 : MAX_PLAYERS_FREE;
                         const atMax = players.length >= maxPlayers;
                         return (
                             <div className="relative group/add">
@@ -281,10 +329,11 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                         )}
 
                         <button
-                            onClick={() => onStartGame(players, gameMode, cupTargetMatch)}
-                            className="bg-green-500 text-black shadow-[0_4px_20px_rgba(0,255,0,0.3)] border border-green-400 hover:bg-green-400 px-6 sm:px-8 py-2 md:py-3 rounded-xl w-full font-black tracking-widest text-base sm:text-lg md:text-xl hover:scale-[1.02] transform transition-transform flex items-center justify-center gap-2 shrink-0"
+                            onClick={() => (!isLicensed && isExpired) ? null : onStartGame(players, gameMode, cupTargetMatch)}
+                            disabled={!isLicensed && isExpired}
+                            className={`px-6 sm:px-8 py-2 md:py-3 rounded-xl w-full font-black tracking-widest text-base sm:text-lg md:text-xl transform transition-transform flex items-center justify-center gap-2 shrink-0 ${!isLicensed && isExpired ? 'bg-gray-600/50 border border-gray-500/30 text-gray-400 cursor-not-allowed shadow-none' : 'bg-green-500 text-black shadow-[0_4px_20px_rgba(0,255,0,0.3)] border border-green-400 hover:bg-green-400 hover:scale-[1.02]'}`}
                         >
-                            START GAME <span className="text-sm opacity-80 md:ml-1 font-bold bg-black/20 px-2 py-0.5 rounded-md text-green-100">({players.length})</span>
+                            {!isLicensed && isExpired ? 'TRIAL EXPIRED' : 'START GAME'} <span className="text-sm opacity-80 md:ml-1 font-bold bg-black/20 px-2 py-0.5 rounded-md text-green-100">({players.length})</span>
                         </button>
                     </div>
                 </div>

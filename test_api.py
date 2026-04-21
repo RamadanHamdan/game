@@ -1,7 +1,7 @@
 import google.generativeai as genai
 
 # Masukkan API Key Anda
-genai.configure(api_key="AIzaSyDVsJGEA2LHhM3z9r3YLrTdfqf3BJUQaRU")
+genai.configure(api_key="AIzaSyDdcscyot7gJrBtXJlXY8hy6a_Q5z-ZgrE")
 
 # Memilih model Gemini
 model = genai.GenerativeModel('gemini-3-flash-preview')

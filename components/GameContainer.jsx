@@ -37,14 +37,12 @@ const INITIAL_PLAYERS = [
     { id: 2, name: "Player 2", score: 0, color: "#4ECDC4", avatar: "🦊" },
 ];
 
-// Mapping keys to option indices (0, 1, 2, 3)
 const CONTROLS = {
     'q': { playerId: 1, option: 0 }, 'w': { playerId: 1, option: 1 }, 'e': { playerId: 1, option: 2 }, 'r': { playerId: 1, option: 3 },
     'u': { playerId: 2, option: 0 }, 'i': { playerId: 2, option: 1 }, 'o': { playerId: 2, option: 2 }, 'p': { playerId: 2, option: 3 },
     'z': { playerId: 3, option: 0 }, 'x': { playerId: 3, option: 1 }, 'c': { playerId: 3, option: 2 }, 'v': { playerId: 3, option: 3 },
     'n': { playerId: 4, option: 0 }, 'm': { playerId: 4, option: 1 }, ',': { playerId: 4, option: 2 }, '.': { playerId: 4, option: 3 },
 };
-
 // --- Sortable Player Wrapper ---
 const SortablePlayerCard = (props) => {
     const {
