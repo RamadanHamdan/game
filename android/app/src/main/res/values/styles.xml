@@ -3,7 +3,6 @@
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
@@ -15,8 +14,16 @@
         <item name="android:background">@null</item>
     </style>
 
-
+    <!--
+        Splash screen — pre API 31.
+        splash.png sudah berupa portrait image (white bg + logo compact centered).
+        android:windowBackground akan scale bitmap ke FIT ukuran window.
+    -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <item name="android:windowBackground">@drawable/splash</item>
+        <!-- Fallback untuk windowSplashScreen API (dioverride di values-v31) -->
+        <item name="windowSplashScreenBackground">#FFFFFF</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash</item>
     </style>
+
 </resources>

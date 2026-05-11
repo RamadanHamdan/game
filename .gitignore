@@ -42,3 +42,9 @@ next-env.d.ts
 
 # jdk
 android/oracleJdk-25/
+
+# Cap
+android/app
+
+# agent
+CLAUDE.md

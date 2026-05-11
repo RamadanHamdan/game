@@ -118,7 +118,7 @@ export default function Home() {
             <h1 className="text-3xl font-black text-white tracking-tight" style={{ fontFamily: 'monospace' }}>
               EduQuiz
             </h1>
-            <p className="text-xs text-white/80 font-medium">Up to 10 Players • Rapid Fire • Competitive</p>
+            <p className="text-xs text-white/80 font-medium">Up to 10 Players • Competitive</p>
           </div>
         </div>
 
