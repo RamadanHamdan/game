@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Plus, StepBackIcon, X, Upload, Download, RefreshCw, Sparkles, Trophy, Lock, ShieldCheck } from 'lucide-react';
+import { Trash2, Plus, StepBackIcon, X, Upload, Download, RefreshCw, Sparkles, Trophy, Lock, ShieldCheck, Zap, Crown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { generateAIQuestions } from '../lib/ai';
 
@@ -17,8 +17,8 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
             { id: 1, name: "Player 1", avatar: "🦁", color: "#FF6B6B" },
             { id: 2, name: "Player 2", avatar: "🦊", color: "#4ECDC4" },
         ];
-        // Jika tidak berlisensi, batasi ke 1 player saja
-        return isLicensed ? base : base.slice(0, MAX_PLAYERS_FREE, MAX_DATE_FREE);
+        // Jika tidak berlisensi, batasi ke MAX_PLAYERS_FREE player
+        return isLicensed ? base : base.slice(0, MAX_PLAYERS_FREE);
     };
     const [players, setPlayers] = useState(getInitialPlayers);
     const [gameMode, setGameMode] = useState(initialGameMode);
@@ -139,14 +139,13 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                         <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/30 px-2.5 py-1 rounded-full shrink-0" title="Upgrade ke lisensi penuh untuk membuka semua fitur">
                             <Lock size={13} className="text-orange-400" />
                             <span className="text-[10px] font-bold text-orange-300 uppercase tracking-widest">Free</span>
-                            <span className="text-[10px] font-bold text-orange-300 uppercase tracking-widest min-w-[70px] text-center">
-                                {isExpired ? 'EXPIRED' : timeLeft}
-                            </span>
+                            {timeLeft && (
+                                <span className="text-[10px] font-bold text-orange-300 uppercase tracking-widest min-w-[70px] text-center">
+                                    {isExpired ? 'EXPIRED' : timeLeft}
+                                </span>
+                            )}
                         </div>
                     )}
-                    <button className="text-[10px] font-bold text-orange-300 uppercase cursor-pointer tracking-widest min-w-[70px] text-center" onClick={() => router.push('/upgrade')}>
-                        Upgrade
-                    </button>
                 </div>
 
                 {/* Horizontal Scrolling Container */}
@@ -328,13 +327,41 @@ const Registration = ({ onStartGame, initialPlayers, onUpload, onDownloadTemplat
                             </div>
                         )}
 
-                        <button
-                            onClick={() => (!isLicensed && isExpired) ? null : onStartGame(players, gameMode, cupTargetMatch)}
-                            disabled={!isLicensed && isExpired}
-                            className={`px-6 sm:px-8 py-2 md:py-3 rounded-xl w-full font-black tracking-widest text-base sm:text-lg md:text-xl transform transition-transform flex items-center justify-center gap-2 shrink-0 ${!isLicensed && isExpired ? 'bg-gray-600/50 border border-gray-500/30 text-gray-400 cursor-not-allowed shadow-none' : 'bg-green-500 text-black shadow-[0_4px_20px_rgba(0,255,0,0.3)] border border-green-400 hover:bg-green-400 hover:scale-[1.02]'}`}
-                        >
-                            {!isLicensed && isExpired ? 'TRIAL EXPIRED' : 'START GAME'} <span className="text-sm opacity-80 md:ml-1 font-bold bg-black/20 px-2 py-0.5 rounded-md text-green-100">({players.length})</span>
-                        </button>
+                        {/* Start Buttons */}
+                        {isLicensed ? (
+                            /* Licensed: single START GAME button */
+                            <button
+                                onClick={() => onStartGame(players, gameMode, cupTargetMatch)}
+                                className="px-6 sm:px-8 py-2 md:py-3 rounded-xl w-full font-black tracking-widest text-base sm:text-lg md:text-xl transform transition-transform flex items-center justify-center gap-2 shrink-0 bg-green-500 text-black shadow-[0_4px_20px_rgba(0,255,0,0.3)] border border-green-400 hover:bg-green-400 hover:scale-[1.02]"
+                            >
+                                START GAME <span className="text-sm opacity-80 md:ml-1 font-bold bg-black/20 px-2 py-0.5 rounded-md text-green-100">({players.length})</span>
+                            </button>
+                        ) : (
+                            /* Unlicensed: show UPGRADE + FREE MODE buttons */
+                            <div className="flex flex-col gap-2 w-full">
+                                {/* Upgrade Button */}
+                                <button
+                                    onClick={() => router.push('/upgrade')}
+                                    className="px-6 sm:px-8 py-2 md:py-3 rounded-xl w-full font-black tracking-widest text-sm sm:text-base md:text-lg transform transition-all flex items-center justify-center gap-2 shrink-0 bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 text-black shadow-[0_4px_25px_rgba(255,215,0,0.35)] border border-yellow-300 hover:shadow-[0_4px_35px_rgba(255,215,0,0.55)] hover:scale-[1.02] hover:brightness-110"
+                                >
+                                    <Crown size={18} className="text-yellow-800" />
+                                    UPGRADE
+                                    <span className="text-[10px] font-bold bg-black/15 px-2 py-0.5 rounded-full text-yellow-900 ml-1">FULL ACCESS</span>
+                                </button>
+
+                                {/* Free Mode Button */}
+                                <button
+                                    onClick={() => onStartGame(players, 'default', cupTargetMatch)}
+                                    className="px-6 sm:px-8 py-2 md:py-2.5 rounded-xl w-full font-bold tracking-wider text-sm sm:text-base transform transition-all flex items-center justify-center gap-2 shrink-0 bg-white/5 text-white/70 border border-white/15 hover:bg-white/10 hover:text-white hover:border-white/30 hover:scale-[1.01]"
+                                >
+                                    <Zap size={16} className="text-blue-400" />
+                                    FREE MODE
+                                    <span className="text-[10px] font-semibold bg-blue-500/15 border border-blue-500/25 px-2 py-0.5 rounded-full text-blue-300 ml-1">
+                                        {players.length} Player • Default Only
+                                    </span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 

@@ -110,15 +110,15 @@ export default function Home() {
         className="z-10 flex flex-col items-center gap-3 bg-[#35A8BA] p-8 rounded-2xl shadow-lg max-w-xl w-full mx-4"
       >
         {/* Logo + Title Row */}
-        <div className="flex items-center gap-3">
-          <div className="bg-yellow-50 p-2.5 rounded-full">
-            <Crown size={36} className="text-yellow-500" />
+        <div className="flex items-center gap-4">
+          <div className="bg-yellow-400/10 p-3 rounded-full border border-yellow-400/30">
+            <Crown size={44} className="text-yellow-400 filter drop-shadow-[0_0_15px_rgba(255,215,0,0.6)]" />
           </div>
           <div>
             <h1 className="text-3xl font-black text-white tracking-tight" style={{ fontFamily: 'monospace' }}>
               EduQuiz
             </h1>
-            <p className="text-xs text-white/80 font-medium">Up to 10 Players • Competitive</p>
+            <p className="text-xs text-white/80 font-medium">Up to 4 Players • Competitive</p>
           </div>
         </div>
 
@@ -160,7 +160,7 @@ export default function Home() {
             }}
             className="flex items-center justify-center gap-1.5 cursor-pointer bg-white hover:bg-slate-50 text-slate-600 px-3 py-2.5 rounded-xl border border-slate-200 shadow-sm transition-all text-xs font-medium"
           >
-            Reset Defaults
+            Reset Question
           </button>
 
           {!isCapacitor && (

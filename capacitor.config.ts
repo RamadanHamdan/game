@@ -10,8 +10,11 @@ const config: CapacitorConfig = {
   },
   plugins: {
     CapacitorUpdater: {
-      autoUpdate: true,
-    }
+      autoUpdate: false,
+    },
+    CapacitorHttp: {
+      enabled: true,
+    },
   }
 };
 

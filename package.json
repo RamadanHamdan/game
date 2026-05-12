@@ -9,7 +9,9 @@
     "lint": "eslint",
     "cap:sync": "npm run build && npx cap sync",
     "cap:open": "npx cap open android",
-    "cap:run": "npx cap run android"
+    "cap:run": "npx cap run android",
+    "deploy:update": "node scripts/deploy-update.js",
+    "deploy:update:skip-build": "node scripts/deploy-update.js --skip-build"
   },
   "dependencies": {
     "@capacitor/android": "^8.1.0",
@@ -23,6 +25,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@supabase/supabase-js": "^2.101.1",
     "core-js": "^3.48.0",
+    "dotenv": "^17.4.2",
     "framer-motion": "^12.34.0",
     "jose": "^6.2.2",
     "lucide-react": "^0.564.0",
@@ -36,9 +39,11 @@
     "@babel/core": "^7.29.0",
     "@babel/preset-env": "^7.29.0",
     "@tailwindcss/postcss": "^4",
+    "adm-zip": "^0.5.17",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "postcss-preset-env": "^11.2.0",
     "tailwindcss": "^4"
-  }
+  },
+  "type": "module"
 }

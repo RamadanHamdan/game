@@ -1,7 +1,7 @@
 'use client';
 
 import soundManager from '../lib/SoundManager';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PlayerCard from './PlayerCard';
 import Timer from './Timer';
@@ -92,6 +92,12 @@ const GameContainer = ({ isLicensed = false }) => {
     const [isPaused, setIsPaused] = useState(false);
     const [showAIGenerator, setShowAIGenerator] = useState(false);
 
+    // ── Pool soal — dikelola via ref agar tidak stale di callbacks ──────────
+    // Pool dikocok sekali saat game mulai, lalu diambil satu per satu per round.
+    // Tidak ada soal yang muncul dua kali sampai semua soal habis.
+    const questionPoolRef = useRef([]); // sisa soal yang belum dipakai
+    const totalPoolSizeRef = useRef(0); // total soal awal (untuk hitung maxRounds)
+
     const togglePause = () => {
         setIsPaused(prev => !prev);
     };
@@ -121,20 +127,20 @@ const GameContainer = ({ isLicensed = false }) => {
             });
     }, []);
 
-    const startRound = React.useCallback((roundNum, currentPlayers) => {
-        if (!questions || questions.length === 0) return;
+    const startRound = React.useCallback((roundNum, activePlayers) => {
+        const pool = questionPoolRef.current;
+        if (!pool || pool.length === 0) return;
 
         const newPlayerQuestions = {};
-        const availableQuestions = [...questions];
 
-        currentPlayers.forEach(p => {
-            if (availableQuestions.length === 0) {
-                availableQuestions.push(...questions);
-            }
-            const randomIndex = Math.floor(Math.random() * availableQuestions.length);
-            const questionCopy = { ...availableQuestions.splice(randomIndex, 1)[0] };
+        // Ambil satu soal per active player dari pool (tidak berulang)
+        activePlayers.forEach(p => {
+            if (pool.length === 0) return; // pool habis, player ini skip
 
-            // Randomize options for multiple choice questions
+            // Ambil soal terdepan dari pool (pool sudah dikocok saat game mulai)
+            const questionCopy = { ...pool.shift() };
+
+            // Kocok urutan pilihan jawaban
             if (questionCopy.options && questionCopy.options.length > 0) {
                 const shuffledOptions = [...questionCopy.options];
                 for (let i = shuffledOptions.length - 1; i > 0; i--) {
@@ -152,7 +158,7 @@ const GameContainer = ({ isLicensed = false }) => {
         setPlayerAnswers({});
         setRoundResults({});
         setGameState('playing');
-    }, [questions]);
+    }, []); // deps kosong — pakai ref untuk pool, bukan state
 
     const handleRoundEnd = React.useCallback(() => {
         if (gameState !== 'playing') return;
@@ -161,7 +167,11 @@ const GameContainer = ({ isLicensed = false }) => {
         let currentFinished = [...finishedPlayers];
         let anyCorrect = false;
 
-        const maxRounds = questions.length > 0 ? questions.length : 10;
+        // maxRounds dihitung dari total soal awal dibagi jumlah pemain awal
+        // Ini memastikan semua soal habis dipakai (mis: 20 soal / 4 pemain = 5 ronde)
+        const numPlayers = players.length || 1;
+        const totalQ = totalPoolSizeRef.current > 0 ? totalPoolSizeRef.current : (questions.length || 10);
+        const maxRounds = Math.max(1, Math.floor(totalQ / numPlayers));
         const scoreIncrement = 100 / maxRounds;
 
         const newPlayers = players.map(p => {
@@ -237,13 +247,17 @@ const GameContainer = ({ isLicensed = false }) => {
 
         const anyFinished = newPlayers.some(p => finalFinishedPlayers.some(fp => fp.playerId === p.id));
         const isMaxRounds = currentRound >= maxRounds;
+        // Pool habis = tidak cukup soal untuk ronde berikutnya
+        const isPoolExhausted = questionPoolRef.current.length < activePlayersAfterRound.length;
 
         setTimeout(() => {
-            if (anyFinished || isMaxRounds) {
+            if (anyFinished || isMaxRounds || isPoolExhausted) {
+                soundManager.stopBGM(); // Stop lagu utama dulu
                 setGameState('winner');
-                soundManager.playWin();
+                soundManager.playWin(); // Hanya SFX game selesai
             } else {
-                startRound(currentRound + 1, newPlayers);
+                // Hanya kirim active players (yang belum selesai) ke ronde berikutnya
+                startRound(currentRound + 1, activePlayersAfterRound);
             }
         }, 1000);
     }, [gameState, finishedPlayers, players, playerQuestions, playerAnswers, currentRound, startRound, gameMode, questions.length]);
@@ -309,6 +323,12 @@ const GameContainer = ({ isLicensed = false }) => {
         setGameState('playing');
         setGameHistory([]);
         setFinishedPlayers([]);
+
+        // Inisialisasi pool soal: kocok semua soal sekali, simpan di ref
+        // Pool akan habis seiring ronde berjalan — tidak ada soal yang berulang
+        const shuffledPool = [...questions].sort(() => Math.random() - 0.5);
+        questionPoolRef.current = shuffledPool;
+        totalPoolSizeRef.current = questions.length;
 
         startRound(1, resetPlayers);
     };
@@ -477,8 +497,11 @@ const GameContainer = ({ isLicensed = false }) => {
         setCurrentRound(1);
         setGameHistory([]);
         setFinishedPlayers([]);
-        setCurrentCupMatch(1); // Reset cup match and points when Play Again is clicked
+        setCurrentCupMatch(1);
         setPlayers(prev => prev.map(p => ({ ...p, score: 0, gamePoints: 0 })));
+        // Reset pool soal agar bisa bermain lagi dari awal
+        questionPoolRef.current = [];
+        totalPoolSizeRef.current = 0;
         setGameState('registration');
     };
 
@@ -569,7 +592,7 @@ const GameContainer = ({ isLicensed = false }) => {
             {/* Header */}
             <header className="flex justify-between items-center glass-panel px-2 py-1 shrink-0 h-[40px] md:h-[50px] border-blue-500/30">
                 <div className="flex items-center gap-2">
-                    <Crown className="text-yellow-400 w-5 h-5 md:w-6 md:h-6" fill="currentColor" />
+                    <Crown className="text-yellow-400 w-5 h-5 md:w-6 md:h-6 filter drop-shadow-[0_0_8px_rgba(255,215,0,0.6)]" fill="currentColor" />
                     <h1 className="text-lg md:text-xl font-bold bg-clip-text text-transparent bg-linear-to-r text-white" style={{ fontFamily: 'monospace' }}>
                         EduQuiz
                     </h1>
