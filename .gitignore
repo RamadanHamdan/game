@@ -48,3 +48,8 @@ android/app
 
 # agent
 CLAUDE.md
+
+# bundle
+/bundle-*.zip
+/version.json
+*.apk
