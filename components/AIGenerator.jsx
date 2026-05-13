@@ -94,7 +94,7 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
                                 <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
                                     <Brain size={24} />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white">AI Quiz Wizard</h3>
+                                <h3 className="text-2xl font-bold text-white">EduQuiz AI</h3>
                             </div>
                             <div className="flex items-center gap-2">
                                 <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors">
@@ -153,7 +153,7 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
                                         min="5"
                                         max="120"
                                         value={settings.timeLimit}
-                                        onChange={(e) => setSettings(s => ({ ...s, timeLimit: parseInt(e.target.value) || 10 }))}
+                                        onChange={(e) => setSettings(s => ({ ...s, timeLimit: parseInt(e.target.value) || '' }))}
                                         className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all w-full text-center"
                                     />
                                 </div>
@@ -164,7 +164,7 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
                                         min="1"
                                         max="50"
                                         value={settings.count}
-                                        onChange={(e) => setSettings(s => ({ ...s, count: parseInt(e.target.value) || 5 }))}
+                                        onChange={(e) => setSettings(s => ({ ...s, count: parseInt(e.target.value) || '' }))}
                                         className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all w-full text-center"
                                     />
                                 </div>

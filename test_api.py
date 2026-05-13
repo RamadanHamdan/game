@@ -1,13 +1,12 @@
-import google.generativeai as genai
+from google import genai
 
 # Masukkan API Key Anda
-genai.configure(api_key="AIzaSyDdcscyot7gJrBtXJlXY8hy6a_Q5z-ZgrE")
+client = genai.Client(api_key="AIzaSyDn4xVTp7rGDYPeh-n6Dyhr2v0hCzGShVc")
 
-# Memilih model Gemini
-model = genai.GenerativeModel('gemini-3-flash-preview')
+# Mengirim perintah (prompt) - gunakan model yang valid
+response = client.models.generate_content(
+    model="gemini-2.0-flash",
+    contents="Halo Gemini, jika kamu bisa membaca pesan ini, artinya API Key saya sudah aktif!"
+)
 
-# Mengirim perintah (prompt)
-response = model.generate_content("Halo Gemini, jika kamu bisa membaca pesan ini, artinya API Key saya sudah aktif!")
-
-# Menampilkan hasil
 print(response.text)
