@@ -39,6 +39,7 @@ const AIGenerator = ({ isOpen, onClose, onQuestionsGenerated }) => {
 
 
     const handleGenerate = async () => {
+        console.log('API KEY:', process.env.NEXT_PUBLIC_OPENAI_API_KEY);
         const finalSubject = settings.subject === 'Lainnya...' ? settings.customSubject : settings.subject;
 
         if (!finalSubject || !settings.grade) {

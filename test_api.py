@@ -1,12 +1,13 @@
-from google import genai
+import os
+from openai import OpenAI
 
-# Masukkan API Key Anda
-client = genai.Client(api_key="AIzaSyDn4xVTp7rGDYPeh-n6Dyhr2v0hCzGShVc")
+# Inisialisasi Client (Secara default akan mencari environment variable OPENAI_API_KEY)
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-# Mengirim perintah (prompt) - gunakan model yang valid
-response = client.models.generate_content(
-    model="gemini-2.0-flash",
-    contents="Halo Gemini, jika kamu bisa membaca pesan ini, artinya API Key saya sudah aktif!"
+response = client.responses.create(
+    model="gpt-5.4-mini", # atau model terbaru lainnya seperti gemini-3-flash-preview
+    input="write a haiku about ai",
+    store=True,
 )
 
-print(response.text)
+print(response.output_text)
